@@ -86,6 +86,7 @@ class Retriever:
 
     def constraints(self, text):
         found = {}
+        canonical = set(tokens(text))
         for key, values in self.slots.items():
             # Explicit key:value also supports unknown values: those must not use stale evidence.
             explicit = re.search(r'\b' + re.escape(key) + r'\s*[:=]\s*([^,;\n]+)', text, re.I)
@@ -95,6 +96,12 @@ class Retriever:
             matches = [(m.start(), v) for v in values for m in re.finditer(r'(?<!\w)' + re.escape(v) + r'(?!\w)', text, re.I)]
             if matches:
                 found[key] = max(matches)[1]
+                continue
+            # Canonical aliases can imply a known metadata value without hard-coding
+            # corpus-specific query strings (e.g. "overseas" -> trip_type=international).
+            inferred = [v for v in values if set(tokens(str(v))) and set(tokens(str(v))) <= canonical]
+            if len(inferred) == 1:
+                found[key] = inferred[0]
         return found
 
     def strip_constraints(self, text):
@@ -124,6 +131,11 @@ class Retriever:
                 score += idf * freq * 2.5 / (freq + 1.5 * (.25 + .75 * length / max(self.avg, 1)))
             ranked.append((score, chunk.id, chunk))
         ranked.sort(key=lambda row: (-row[0], row[1]))
+        if ranked:
+            # Keep near-ties for broad questions, but drop weak secondary matches when
+            # a named entity or paraphrase makes one passage clearly more specific.
+            best = ranked[0][0]
+            ranked = [row for row in ranked if row[0] >= best * .72]
         return [c for _, _, c in ranked[:limit]]
 
 

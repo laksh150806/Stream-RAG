@@ -68,6 +68,19 @@ class CoreTests(unittest.TestCase):
         self.assertFalse(self.ids())
         self.assertTrue(result['claims'][0]['uncertainty'])
 
+    def test_paraphrase_concepts_and_inferred_scope(self):
+        cases = [
+            ('Could our thirty delegates fit in Cedar Hall?', {'pune-capacity:s1'}),
+            ('What would we forfeit if we called off the gathering in Delhi?', {'delhi-cancellation:s1'}),
+            ('What paperwork is needed to claim an overseas journey?', {'international-travel:s1'}),
+            ('Do you have wheelchair access?', {'workshop-accessibility:s1'}),
+        ]
+        for query, expected in cases:
+            session = StreamingSession(self.chunks)
+            session.ingest(query, timestamp_s=0, turn_id='1', final=True)
+            actual = {e['source_id'] for c in session.snapshot()['claims'] for e in c['evidence']}
+            self.assertEqual(actual, expected, query)
+
     def test_revised_partial_removes_retracted_intent(self):
         self.send('Workshop capacity in Pune and catering options', final=False)
         self.send('Workshop capacity in Pune', timestamp=1)

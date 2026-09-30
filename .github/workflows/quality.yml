@@ -1,0 +1,39 @@
+name: Quality gate
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Install hosted dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Unit and UI tests
+        run: python -m unittest discover -s tests -v
+      - name: Development evaluation
+        run: python scripts/evaluate.py | tee development-results.json
+      - name: Require all authored streaming cases
+        run: |
+          python - <<'PY'
+          import json
+          data = json.load(open('development-results.json'))
+          row = data['modes']['streaming']
+          assert row['passed'] == row['total'], f"streaming evaluation: {row['passed']}/{row['total']}"
+          print(f"Streaming development checks: {row['passed']}/{row['total']}")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: development-results
+          path: development-results.json
