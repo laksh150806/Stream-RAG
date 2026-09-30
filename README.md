@@ -1,5 +1,7 @@
 # Stream-RAG
 
+[![Quality gate](https://github.com/laksh150806/Stream-RAG/actions/workflows/quality.yml/badge.svg)](https://github.com/laksh150806/Stream-RAG/actions/workflows/quality.yml)
+
 An inspectable prototype for **Theme 4: Streaming Live RAG**. Cumulative transcript fragments trigger early retrieval, compound questions create separate jobs, and late scope changes update dependent claims while retaining unaffected evidence.
 
 The default workspace runs **without an API key or model download**. It uses local BM25 retrieval with concept normalization, metadata-aware constraint inference, English parsing rules, and exact source excerpts. It is not a dense retriever or a generative chatbot. The original BBC/Groq experiment remains available as an optional page.
