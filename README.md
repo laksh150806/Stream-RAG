@@ -72,7 +72,11 @@ python scripts/evaluate.py
 
 UI tests require Streamlit and are skipped without it. The nine-case authored development evaluation passes **6/9 exact source-set checks**. Three paraphrase challenges expose lexical limitations. This is not an official or held-out accuracy score. See [evaluation](docs/evaluation.md) and [results](docs/development-results.json) for the baseline and two ablations.
 
-## Optional BBC live-news mode
+## Hosted live-news mode
+
+The sidebar BBC page now runs on the free Python service: bundled FFmpeg, Groq Whisper transcription, BM25 retrieval, and Groq answer generation. Add `GROQ_API_KEY` in Render Environment settings and redeploy. Use **Check connection**, then capture a BBC clip or upload audio, and ask a question. Transcripts are session-scoped (last 100) and exportable. No background recording is performed by this hosted page. The answer model is shown in the UI; it prefers Llama when the account lists it and otherwise selects GPT-OSS 20B. `GROQ_CHAT_MODEL` can override that choice.
+
+## Original local BBC live-news mode
 
 The sidebar links to the original news experiment. It needs FFmpeg, optional packages, network access and a Groq key set through `GROQ_API_KEY` or Streamlit secrets. Copy the secrets example and keep the real file untracked.
 

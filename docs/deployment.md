@@ -18,3 +18,7 @@ dependencies are deliberately not included in the default hosting configuration.
 Conversation state and uploaded corpora live in the current Streamlit session.
 Export traces before restarting. Hosting setup is not proof of a successful
 deployment: confirm provider build logs and the health check before sharing a URL.
+
+## Hosted news update
+
+The deployed BBC page now includes bundled FFmpeg and Groq SDK via requirements.txt. Set GROQ_API_KEY in Render and redeploy. This hosted adapter uses BM25 instead of MiniLM/Chroma to keep memory usage small. The original model implementation remains in Live-Streaming-Data-RAG. The key-free workspace is unchanged.

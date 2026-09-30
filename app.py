@@ -165,5 +165,5 @@ with about_tab:
 ### Current limits
 The controller and decomposition are English rules, and retrieval is lexical BM25 with a small synonym map. Implicit constraints, complex negation and unfamiliar paraphrases may fail. Excerpts prove source provenance, not that every retrieved passage answers the question. This is an engineering prototype; official hackathon gates have not been measured.
 
-BBC mode retains the original live-news experiment with Groq speech recognition and Llama generation. It fetches external news and stores transcripts, so it is separate from the corpus-isolated Theme 4 evaluation mode.
+The hosted BBC page uses Groq speech recognition and generation with BM25 retrieval and session-only transcripts. Its displayed model is selected from the models available to the configured account. The original MiniLM/Chroma experiment is retained in the repository.
 ''')
