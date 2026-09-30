@@ -11,9 +11,9 @@ branch `main`, entrypoint `app.py`, and Python 3.12.
 
 The default app needs no secrets. It retrieves exact excerpts from the uploaded
 or bundled corpus using BM25; it is not the original generative live-news model.
-The optional BBC page requires its separate dependencies, FFmpeg, network access,
-and `GROQ_API_KEY`. Never place that key in source control. Those heavyweight
-dependencies are deliberately not included in the default hosting configuration.
+The optional hosted BBC page uses the bundled `imageio-ffmpeg` binary, network
+access, and `GROQ_API_KEY`. Never place that key in source control. The heavier
+original MiniLM/Chroma experiment still uses its separate requirements file.
 
 Conversation state and uploaded corpora live in the current Streamlit session.
 Export traces before restarting. Hosting setup is not proof of a successful
@@ -21,4 +21,4 @@ deployment: confirm provider build logs and the health check before sharing a UR
 
 ## Hosted news update
 
-The deployed BBC page now includes bundled FFmpeg and Groq SDK via requirements.txt. Set GROQ_API_KEY in Render and redeploy. This hosted adapter uses BM25 instead of MiniLM/Chroma to keep memory usage small. The original model implementation remains in Live-Streaming-Data-RAG. The key-free workspace is unchanged.
+The deployed BBC page includes bundled FFmpeg and the Groq SDK via `requirements.txt`. Set `GROQ_API_KEY` in Render and redeploy. `GROQ_CHAT_MODEL` is optional. `BBC_STREAM_URL` is an optional emergency override when a provider region cannot reach BBC's media CDN. The UI exposes separate Groq and BBC-source checks so failures can be isolated before transcription. This hosted adapter uses BM25 instead of MiniLM/Chroma to keep memory usage small. The original model implementation remains in `Live-Streaming-Data-RAG`. The key-free workspace is unchanged.

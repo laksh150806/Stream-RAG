@@ -37,7 +37,7 @@ def get_secret_key():
     return os.environ.get("GROQ_API_KEY", "")
 
 GROQ_API_KEY = get_secret_key()
-BBC_STREAM_URL = "http://stream.live.vc.bbcmedia.co.uk/bbc_world_service"
+BBC_STREAM_URL = os.environ.get("BBC_STREAM_URL", "http://as-hls-ww-live.akamaized.net/pool_87948813/live/ww/bbc_world_service/bbc_world_service.isml/bbc_world_service-audio%3d96000.norewind.m3u8")
 CHUNK_DURATION = 60
 CHANNEL_ID = 0
 
@@ -65,7 +65,7 @@ def init_components(api_key):
     )
     
     llm = ChatGroq(
-        model="llama-3.3-70b-versatile",        
+        model=os.environ.get("GROQ_CHAT_MODEL", "llama-3.3-70b-versatile"),        
         temperature=0.2, 
         max_tokens=200,
         api_key=api_key

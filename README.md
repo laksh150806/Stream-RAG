@@ -29,7 +29,7 @@ Open the local URL printed by Streamlit, normally http://localhost:8501.
 docker compose up --build
 ```
 
-The Python/Streamlit path is tested. Docker is unavailable in the review environment, so the container command is not verified. The default container includes only the Theme 4 workspace, not BBC dependencies or FFmpeg.
+The Python/Streamlit path is tested. Docker is unavailable in the review environment, so the container command is not verified. The container now includes the lightweight hosted-news dependencies (Groq SDK and bundled FFmpeg); the heavier original MiniLM/Chroma experiment remains separate.
 
 ## Try the live flow
 
@@ -74,7 +74,7 @@ UI tests require Streamlit and are skipped without it. The nine-case authored de
 
 ## Hosted live-news mode
 
-The sidebar BBC page now runs on the free Python service: bundled FFmpeg, Groq Whisper transcription, BM25 retrieval, and Groq answer generation. Add `GROQ_API_KEY` in Render Environment settings and redeploy. Use **Check connection**, then capture a BBC clip or upload audio, and ask a question. Transcripts are session-scoped (last 100) and exportable. No background recording is performed by this hosted page. The answer model is shown in the UI; it prefers Llama when the account lists it and otherwise selects GPT-OSS 20B. `GROQ_CHAT_MODEL` can override that choice.
+The sidebar BBC page runs on the Python service with bundled FFmpeg, Groq Whisper transcription, BM25 retrieval, and Groq answer generation. Add `GROQ_API_KEY` in Render Environment settings or Streamlit secrets and redeploy. Use **Check connection**, then **Check BBC source** before capturing a clip. The capture path resolves BBC's metadata playlist and tries several current World Service HLS/MP3 fallbacks; `BBC_STREAM_URL` can override the source if a hosting region is blocked. Uploaded audio and pasted transcripts remain available even when BBC's CDN rejects server-side capture. Transcripts are session-scoped (last 100) and exportable. No background recording is performed by this hosted page. The answer model is shown in the UI; it prefers Llama when the account lists it and otherwise selects GPT-OSS 20B. `GROQ_CHAT_MODEL` can override that choice.
 
 ## Original local BBC live-news mode
 
@@ -95,4 +95,4 @@ This repository began as a file-identical snapshot of `laksh150806/Streaming-Liv
 
 See [architecture](docs/architecture.md), [dataset card](data/DATASET_CARD.md), [telemetry schema](docs/telemetry.schema.json), and [original news README](docs/original-news-readme.md).
 
-No hackathon gate is certified. Remaining work includes semantic intent/constraint handling, unseen-data evaluation, full Groq testing, Docker validation, a demo video and hosting.
+No hackathon gate is certified. Remaining work includes semantic intent/constraint handling, unseen-data evaluation, clean-machine Docker validation, and the final demo video.
