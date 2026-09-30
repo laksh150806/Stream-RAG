@@ -33,6 +33,23 @@ class CoreTests(unittest.TestCase):
         self.assertEqual(self.s.snapshot()['retrieval_count'], before)
         self.assertEqual(self.ids(), {'pune-capacity:s1', 'pune-cancellation:s1', 'pune-catering:s1'})
 
+    def test_multi_sentence_preserves_independent_scopes(self):
+        text = (
+            'What is workshop capacity in Pune? '
+            'What is the cancellation policy in Delhi? '
+            'What are catering options in Bengaluru?'
+        )
+        result = self.send(text)
+        self.assertEqual(
+            self.ids(),
+            {'pune-capacity:s1', 'delhi-cancellation:s1', 'bengaluru-catering:s1'},
+        )
+        scopes = [claim['scope'] for claim in result['claims']]
+        self.assertEqual(scopes[0].get('city'), 'Pune')
+        self.assertEqual(scopes[1].get('city'), 'Delhi')
+        self.assertEqual(scopes[2].get('city'), 'Bengaluru')
+        self.assertNotIn('city', result['constraints'])
+
     def test_late_scope_changes_only_dependent_claims(self):
         self.send('Workshop capacity in Pune and accessibility policy')
         unaffected = self.s.snapshot()['claims'][1]

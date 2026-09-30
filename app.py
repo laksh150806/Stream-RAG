@@ -160,6 +160,8 @@ def draw_answer():
         for item in snapshot['claims']:
             with st.container(border=True):
                 st.markdown('**' + item['query'].replace('*', '') + '**')
+                if item.get('scope'):
+                    st.caption('Intent scope: ' + ' · '.join(f'{k}: {v}' for k, v in item['scope'].items()))
                 if item['uncertainty']:
                     st.warning(item['uncertainty'])
                 for evidence in item['evidence']:
@@ -221,6 +223,8 @@ with session_tab:
     st.divider()
     st.markdown('**Try this sequence**')
     st.code('Workshop capacity in Pune and cancellation policy and catering options and accessibility\nActually city: Delhi\nPlease repeat your last answer in two bullets.', language=None)
+    st.markdown('**Also try independent sentence scopes**')
+    st.code('What is workshop capacity in Pune? What is the cancellation policy in Delhi? What are catering options in Bengaluru?', language=None)
 
 with corpus_tab:
     st.subheader('Every answer starts here')

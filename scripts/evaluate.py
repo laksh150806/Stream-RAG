@@ -16,8 +16,9 @@ cases = [
     ('paraphrase_capacity', ['Could our thirty delegates fit in Cedar Hall?'], ['pune-capacity:s1']),
     ('paraphrase_cancellation', ['What would we forfeit if we called off the gathering in Delhi?'], ['delhi-cancellation:s1']),
     ('paraphrase_travel', ['What paperwork is needed to claim an overseas journey?'], ['international-travel:s1']),
+    ('multi_sentence_scopes', ['What is workshop capacity in Pune? What is the cancellation policy in Delhi? What are catering options in Bengaluru?'], ['pune-capacity:s1','delhi-cancellation:s1','bengaluru-catering:s1']),
 ]
-report = {'scope':'Nine self-authored development cases against a synthetic corpus. No Groq calls or official benchmark. Exact source-set matching is strict and small-sample.', 'modes':{}}
+report = {'scope':'Ten self-authored development cases against a synthetic corpus. No Groq calls or official benchmark. Exact source-set matching is strict and small-sample.', 'modes':{}}
 for name, options in [('streaming',{}),('end_of_turn',{'early':False}),('no_decomposition',{'decompose':False}),('no_refinement',{'refine':False})]:
     results = []
     for case_id, turns, expected in cases:

@@ -193,7 +193,37 @@ class StreamingSession:
     def _parts(self, text):
         if not self.decompose:
             return [text]
-        return [p.strip(' ,;.?') for p in re.split(r'\s+(?:and|also|plus|as well as|along with)\s+|[;?]\s*|,\s*(?=(?:what|how|where|when)\b)', text, flags=re.I) if p.strip(' ,;.?')]
+        # Split both conversational conjunctions and complete sentences. This lets
+        # one utterance carry independent scopes, e.g. Pune capacity + Delhi policy.
+        pattern = (
+            r'\s+(?:and|also|plus|as well as|along with)\s+'
+            r'|(?<=[.!?])\s+'
+            r'|[;\n]+\s*'
+            r'|,\s*(?=(?:what|how|where|when|which|tell|give|show)\b)'
+        )
+        return [
+            p.strip(' ,;.!?')
+            for p in re.split(pattern, text, flags=re.I)
+            if p.strip(' ,;.!?')
+        ]
+
+    def _scoped_parts(self, parts):
+        """Return per-part constraints plus only the constraints shared by the turn."""
+        local = [self.retriever.constraints(part) for part in parts]
+        shared = dict(self._turn_start_constraints)
+        keys = set().union(*(scope.keys() for scope in local)) if local else set()
+        for key in keys:
+            values = {}
+            for scope in local:
+                if key in scope:
+                    values[str(scope[key]).casefold()] = scope[key]
+            if len(values) == 1:
+                shared[key] = next(iter(values.values()))
+            elif len(values) > 1:
+                # Conflicting values belong to individual intents, not session scope.
+                shared.pop(key, None)
+        effective = [{**shared, **scope} for scope in local]
+        return local, shared, effective
 
     @staticmethod
     def _format_only(text):
@@ -227,8 +257,9 @@ class StreamingSession:
         if not final and self.intents and re.match(r'^(?:please\s+)?(?:repeat|rewrite|format|shorten)\b', text, re.I):
             self.log('retrieval_wait', reason='presentation_request_incomplete')
             return self._finish(previous, final, started)
+        parts = self._parts(text)
+        local_scopes, target, effective_scopes = self._scoped_parts(parts)
         incoming = self.retriever.constraints(text)
-        target = {**self._turn_start_constraints, **incoming}
         changed = {k for k in set(target) | set(self.constraints) if self.constraints.get(k) != target.get(k)}
         correction = bool(self._turn_baseline) and bool(incoming) and bool(re.search(r'\b(?:actually|instead|correction|meant|change|make that)\b', text, re.I))
         if not final and not self.early:
@@ -239,15 +270,27 @@ class StreamingSession:
         if correction and self.refine:
             for key, intent in self.intents.items():
                 if changed & set(intent['dependencies']):
-                    jobs.append((key, self.retriever.strip_constraints(intent['query'])))
-            self.log('refinement_planned', changed_constraints=sorted(changed), affected_intents=[k for k, _ in jobs], preserved_intents=[k for k in self.intents if k not in {j[0] for j in jobs}])
+                    scope = dict(intent.get('constraints', {}))
+                    for field in changed:
+                        if field in target:
+                            scope[field] = target[field]
+                        else:
+                            scope.pop(field, None)
+                    jobs.append((key, self.retriever.strip_constraints(intent['query']), scope))
+            affected = {job[0] for job in jobs}
+            self.log(
+                'refinement_planned',
+                changed_constraints=sorted(changed),
+                affected_intents=sorted(affected),
+                preserved_intents=[k for k in self.intents if k not in affected],
+            )
         else:
             if correction and not self.refine:
                 self.intents = {}
-            parts = self._parts(text)
             active = set()
             for idx, part in enumerate(parts):
                 key = f'{turn_id}:{idx}'
+                scope = effective_scopes[idx] if idx < len(effective_scopes) else dict(target)
                 # Incomplete trailing clause waits; already stable earlier clauses can search.
                 words = tokens(self.retriever.strip_constraints(part))
                 stable = len(words) >= 2 and not re.search(r'\b(?:in|at|and|the|for|with|of|to)\s*$', part, re.I)
@@ -258,29 +301,52 @@ class StreamingSession:
                 active.add(key)
                 old = self.intents.get(key)
                 normalized = ' '.join(words)
-                if old is None or old['normalized'] != normalized or changed & set(old['dependencies']):
-                    jobs.append((key, part))
+                if old is None or old['normalized'] != normalized or old.get('constraints', {}) != scope:
+                    jobs.append((key, part, scope))
             # Remove evidence retracted by a revised cumulative transcript in this same turn.
             for key in self._turn_keys - active:
                 self.intents.pop(key, None)
             self._turn_keys = active
         if jobs:
-            self.log('retrieval_started', trigger='final' if final else 'provisional', sub_queries=[q for _, q in jobs], constraints=dict(self.constraints))
+            self.log(
+                'retrieval_started',
+                trigger='final' if final else 'provisional',
+                sub_queries=[q for _, q, _ in jobs],
+                intent_constraints=[dict(scope) for _, _, scope in jobs],
+                constraints=dict(self.constraints),
+            )
+
             def retrieve(job):
-                key, query = job
+                key, query, scope = job
                 before = time.perf_counter()
-                docs = self.retriever.search(query, self.constraints)
-                return key, query, docs, round((time.perf_counter() - before) * 1000, 3)
+                docs = self.retriever.search(query, scope)
+                return key, query, scope, docs, round((time.perf_counter() - before) * 1000, 3)
+
             with ThreadPoolExecutor(max_workers=min(4, len(jobs))) as pool:
                 results = list(pool.map(retrieve, jobs))
-            for key, query, docs, latency in results:
+
+            for key, query, scope, docs, latency in results:
                 dependencies = set(k for c in docs for k in c.metadata if k in self.retriever.slots)
-                # For an unknown result, scope changes must be able to retry the query.
+                # For an unknown result, scoped changes must be able to retry the query.
                 if not docs:
-                    dependencies.update(self.constraints)
+                    dependencies.update(scope)
                 claims = [{'source_id': c.id, 'quote': c.text, 'title': c.title} for c in docs]
-                self.intents[key] = dict(query=query, normalized=' '.join(tokens(self.retriever.strip_constraints(query))), dependencies=sorted(dependencies), claims=claims, uncertainty=None if docs else 'No supporting evidence found in this corpus.')
-                self.log('retrieval_completed', intent_id=key, query=query, source_ids=[c.id for c in docs], latency_ms=latency)
+                self.intents[key] = dict(
+                    query=query,
+                    normalized=' '.join(tokens(self.retriever.strip_constraints(query))),
+                    constraints=dict(scope),
+                    dependencies=sorted(dependencies),
+                    claims=claims,
+                    uncertainty=None if docs else 'No supporting evidence found in this corpus.',
+                )
+                self.log(
+                    'retrieval_completed',
+                    intent_id=key,
+                    query=query,
+                    intent_constraints=dict(scope),
+                    source_ids=[c.id for c in docs],
+                    latency_ms=latency,
+                )
         else:
             self.log('retrieval_wait' if not self.intents else 'retrieval_reused', reason='incomplete_or_unchanged')
         return self._finish(previous, final, started)
@@ -297,7 +363,16 @@ class StreamingSession:
         return self.snapshot()
 
     def snapshot(self):
-        claims = [dict(intent_id=key, query=v['query'], evidence=copy.deepcopy(v['claims']), uncertainty=v['uncertainty']) for key, v in self.intents.items()]
+        claims = [
+            dict(
+                intent_id=key,
+                query=v['query'],
+                scope=copy.deepcopy(v.get('constraints', {})),
+                evidence=copy.deepcopy(v['claims']),
+                uncertainty=v['uncertainty'],
+            )
+            for key, v in self.intents.items()
+        ]
         # Mechanically verify every quote and ID before returning it.
         for item in claims:
             for claim in item['evidence']:
