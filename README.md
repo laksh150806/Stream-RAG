@@ -12,11 +12,10 @@ Stream-RAG is an inspectable streaming retrieval system that starts useful retri
 |---|---|
 | 🌐 **Live Demo** | [https://stream-rag.onrender.com](https://stream-rag.onrender.com) |
 | 💻 **GitHub Repository** | [github.com/laksh150806/Stream-RAG](https://github.com/laksh150806/Stream-RAG) |
-| 🖥️ **Presentation Deck** | [View PPT](https://docs.google.com/presentation/d/1LdP7Fj4RdtwmUgVhlIyonTyGOSLMxtSX/edit?usp=sharing&ouid=101103369248603917027&rtpof=true&sd=true) |
-| 🤖 **AI Usage Disclosure** | [View AI Disclosure](https://docs.google.com/document/d/1ZjeollIPo6CBaz8p_U2p52vY1nha0c_B/edit?usp=sharing&ouid=101103369248603917027&rtpof=true&sd=true) |
-| 🎥 **Demo Video** | **Coming soon — final link will be added before submission** |
+| 🖥️ **Presentation Deck** | [View PPT](./SRM_Snipe%20Coders_Presentation.pptx) |
+| 🤖 **AI Usage Disclosure** | [View AI Disclosure](./SRM_Snipe%20Coders_AI_Disclosure.docx) |
+| 🎥 **Demo Video** | [Watch on Google Drive](https://drive.google.com/file/d/18O8BbbWUUb8T_4ok6-977WpDluhvMvNU/view?usp=sharing) |
 
-<!-- DEMO_VIDEO_LINK: replace the row above with the final video URL before submission. -->
 
 ## Why this is different from normal end-of-turn RAG
 
@@ -311,7 +310,7 @@ Additional details: [docs/deployment.md](docs/deployment.md).
 
 The project AI-usage disclosure is provided here:
 
-**[AI Usage Disclosure](https://docs.google.com/document/d/1ZjeollIPo6CBaz8p_U2p52vY1nha0c_B/edit?usp=sharing&ouid=101103369248603917027&rtpof=true&sd=true)**
+**[AI Usage Disclosure](./SRM_Snipe%20Coders_AI_Disclosure.docx)**
 
 ## Provenance
 
