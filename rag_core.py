@@ -164,7 +164,7 @@ class Retriever:
             # Keep near-ties for broad questions, but drop weak secondary matches when
             # a named entity or paraphrase makes one passage clearly more specific.
             best = ranked[0][0]
-            ranked = [row for row in ranked if row[0] >= best * .72]
+            ranked = [row for row in ranked if row[0] >= best * .82]
         return [c for _, _, c in ranked[:limit]]
 
 
