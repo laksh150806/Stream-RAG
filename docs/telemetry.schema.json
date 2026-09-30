@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Stream-RAG session export",
+  "type": "object",
+  "required": ["schema_version", "mode", "answer", "versions", "events"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "mode": {"const": "corpus_only_extractive"},
+    "answer": {"type": "object"},
+    "versions": {"type": "array", "items": {"type": "object", "required": ["version", "claims", "constraints", "style"]}},
+    "events": {"type": "array", "items": {
+      "type": "object",
+      "required": ["seq", "event", "timestamp_s", "wall_time_utc", "turn_id", "answer_version"],
+      "properties": {
+        "seq": {"type": "integer", "minimum": 1},
+        "event": {"enum": ["transcript_received", "retrieval_suppressed", "retrieval_wait", "retrieval_reused", "refinement_planned", "retrieval_started", "retrieval_completed", "answer_updated", "event_completed"]},
+        "timestamp_s": {"type": "number", "minimum": 0},
+        "wall_time_utc": {"type": "string", "format": "date-time"},
+        "turn_id": {"type": "string"},
+        "answer_version": {"type": "integer", "minimum": 0},
+        "latency_ms": {"type": "number", "minimum": 0},
+        "source_ids": {"type": "array", "items": {"type": "string"}},
+        "inference_tokens": {"const": 0}
+      }
+    }}
+  }
+}

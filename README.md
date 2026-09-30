@@ -1,120 +1,94 @@
-# 📡 Streaming Live RAG
+# Stream-RAG
 
-A real-time **Retrieval-Augmented Generation (RAG)** application that listens to the BBC World Service live radio stream, transcribes audio using Groq's Whisper API, stores transcripts in a ChromaDB vector database, and answers natural language questions about the live broadcast.
+An inspectable prototype for **Theme 4: Streaming Live RAG**. Cumulative transcript fragments trigger early retrieval, compound questions create separate jobs, and late scope changes update dependent claims while retaining unaffected evidence.
 
----
+The default workspace runs **without an API key or model download**. It uses local BM25 retrieval, English parsing rules, and exact source excerpts. It is not a dense retriever or a generative chatbot. The original BBC/Groq experiment remains available as an optional page.
 
-## 🧠 How It Works
+## Deploy
 
-```
-Live Radio Stream → FFmpeg Records Audio → Groq Whisper Transcribes
-      → HuggingFace Embeds Text → ChromaDB Stores Vectors
-              → User Asks Question → LLM Answers from Transcripts
-```
+See [deployment instructions](docs/deployment.md). `render.yaml` configures the key-free workspace for Render. For Streamlit Community Cloud use branch `main` and entrypoint `app.py`. The live-news model requires separate setup and a Groq key.
 
-1. **Background Capture** — FFmpeg records 60-second chunks from the BBC World Service internet radio stream
-2. **Transcription** — Each audio chunk is sent to Groq's Whisper API (`whisper-large-v3-turbo`) for speech-to-text
-3. **Embedding & Storage** — Transcripts are embedded using a local HuggingFace model and stored in ChromaDB with timestamps
-4. **Querying** — When you ask a question, it finds the most relevant transcript chunks via vector similarity search, then passes them to a powerful LLM (via Groq) to generate a grounded answer
+## Run
 
----
+Python 3.12 on Linux:
 
-## 🏗️ Tech Stack
-
-| Component | Technology |
-|---|---|
-| 🎙️ Speech-to-Text | Groq Whisper (`whisper-large-v3-turbo`) |
-| 🧠 LLM | `openai/gpt-oss-120b` via Groq |
-| 📐 Embeddings | `all-MiniLM-L6-v2` (local, HuggingFace) |
-| 🗄️ Vector Store | ChromaDB (persistent) |
-| 🎬 Audio Capture | FFmpeg |
-| 🖥️ UI | Streamlit |
-
----
-
-## 🚀 Quick Start (Local)
-
-### 1. Prerequisites
-- Python 3.9+
-- FFmpeg installed and on PATH
-- A free Groq API key from [console.groq.com](https://console.groq.com)
-
-### 2. Install dependencies
 ```bash
-pip install -r Live-Streaming-Data-RAG/requirements.txt
+sh run.sh
 ```
 
-### 3. Set your API key
-Either set it as an environment variable:
+Or:
+
 ```bash
-export GROQ_API_KEY="your_key_here"
+python -m pip install -r requirements.lock.txt
+python -m streamlit run app.py
 ```
-Or paste it directly into `streaming_rag_app_.py` (line 21).
 
-### 4. Run the app
+Open the local URL printed by Streamlit, normally http://localhost:8501.
+
 ```bash
-streamlit run Live-Streaming-Data-RAG/streaming_rag_app_.py
+docker compose up --build
 ```
 
----
+The Python/Streamlit path is tested. Docker is unavailable in the review environment, so the container command is not verified. The default container includes only the Theme 4 workspace, not BBC dependencies or FFmpeg.
 
-## ☁️ Deploy to Streamlit Cloud
+## Try the live flow
 
-1. Fork or clone this repo to your GitHub account
-2. Go to [share.streamlit.io](https://share.streamlit.io) and click **"New app"**
-3. Select your repo and set the **main file path** to:
-   ```
-   Live-Streaming-Data-RAG/streaming_rag_app_.py
-   ```
-4. Under **Advanced settings → Secrets**, add:
-   ```toml
-   GROQ_API_KEY = "your_groq_api_key_here"
-   ```
-5. Click **Deploy!** — the `packages.txt` file will automatically install FFmpeg on the server.
+1. `Workshop capacity in Pune and cancellation policy and catering options`
+2. `Actually city: Delhi`
+3. `Please repeat your last answer in two bullets.`
 
----
+Watch source IDs, answer versions and retrieval counts. The first message is replayed in cumulative fragments; retrieval can start before the final fragment. The second changes city-dependent evidence. The third groups existing evidence without searching. The simulator is labeled and does not record microphone audio. The advanced panel accepts real cumulative transcript fragments and JSONL streams.
 
-## 🖥️ App Features
+## Corpus and event contract
 
-### 🔍 Query Tab
-- Ask any natural language question about what was discussed on the radio
-- Filter by time window (Last 10 min, 30 min, 60 min, or All Time)
-- Toggle reranking for improved result accuracy
-- See source citations with timestamps
+The **17-document synthetic corpus** is for development/demo only. No organizer dataset was supplied. Upload a JSON object with `documents`, or a list of documents:
 
-### 📡 Manual Capture Tab
-- Manually trigger audio capture without running the background loop
-- Capture 1–5 chunks at once and see transcriptions in real time
-
-### 📊 Database Tab
-- See total number of transcripts and words indexed
-- Browse the 10 most recent transcript chunks
-
----
-
-## 📁 Project Structure
-
-```
-Streaming-Live-RAG/
-├── Live-Streaming-Data-RAG/
-│   ├── streaming_rag_app_.py   # Main Streamlit application
-│   ├── requirements.txt        # Python dependencies
-│   ├── packages.txt            # System dependencies (ffmpeg)
-│   └── .streamlit/
-│       └── secrets.toml        # API key template (do not commit real key!)
-└── README.md
+```json
+{"documents":[{"id":"doc-1","title":"Example policy","text":"Verbatim evidence.","metadata":{"city":"Pune","topic":"capacity"}}]}
 ```
 
----
+IDs must be unique. Limits: 2 MB upload, 1500 documents, 4000 chunks. Scalar metadata defines filtering scopes. Named corpus values are recognized in text; explicit `key: value` supports unknown values safely. Implicit unseen place names and complex constraints are not automatically understood.
 
-## ⚠️ Notes
+Each event has cumulative text **for that turn**, not a delta. Timestamps must be monotonic across the session; use a new turn ID after `final: true`.
 
-- The BBC World Service stream URL (`http://stream.live.vc.bbcmedia.co.uk/bbc_world_service`) is a public internet radio stream — no login or subscription required.
-- Transcripts and the ChromaDB database are stored locally in `./streaming_rag/` and persist across sessions.
-- The free Groq tier has generous rate limits but may throttle if you capture very frequently.
+```json
+{"timestamp_s":0.8,"turn_id":"1","text":"Workshop capacity in Pune","final":false}
+```
 
----
+Replay without Streamlit or third-party packages:
 
-## 📄 License
+```bash
+python replay.py --corpus data/demo_corpus.json --input data/demo_stream.jsonl
+```
 
-MIT
+Output includes answer versions, query decisions, source IDs, timings and uncertainty. Exact excerpts are checked against session chunks. Inference tokens are zero in extractive mode.
+
+## Validation
+
+```bash
+python -m unittest discover -s tests -v
+python scripts/evaluate.py
+```
+
+UI tests require Streamlit and are skipped without it. The nine-case authored development evaluation passes **6/9 exact source-set checks**. Three paraphrase challenges expose lexical limitations. This is not an official or held-out accuracy score. See [evaluation](docs/evaluation.md) and [results](docs/development-results.json) for the baseline and two ablations.
+
+## Optional BBC live-news mode
+
+The sidebar links to the original news experiment. It needs FFmpeg, optional packages, network access and a Groq key set through `GROQ_API_KEY` or Streamlit secrets. Copy the secrets example and keep the real file untracked.
+
+```bash
+python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+python -m pip install -r Live-Streaming-Data-RAG/requirements.txt
+```
+
+Actual components: Whisper `whisper-large-v3-turbo`, MiniLM `all-MiniLM-L6-v2`, Chroma and Groq `llama-3.3-70b-versatile`. No reranker is configured. The misleading toggle/model label were corrected. A queue/Event worker replaces Streamlit access from a background thread. Time filters now implement their stated lookback interval. Transcript indexing failures are surfaced.
+
+BBC mode uses external data and persistent transcripts and is separate from the corpus-isolated evaluation workspace. Full Groq inference remains unverified without credentials.
+
+## Provenance and readiness
+
+This repository began as a file-identical snapshot of `laksh150806/Streaming-Live-RAG`, with a single initial commit. The earlier update ZIP separately retains a backup bundle of the original history. The source repository was not modified.
+
+See [architecture](docs/architecture.md), [dataset card](data/DATASET_CARD.md), [telemetry schema](docs/telemetry.schema.json), and [original news README](docs/original-news-readme.md).
+
+No hackathon gate is certified. Remaining work includes semantic intent/constraint handling, unseen-data evaluation, full Groq testing, Docker validation, a demo video and hosting.

@@ -13,3 +13,11 @@ __pycache__/
 # OS
 .DS_Store
 Thumbs.db
+
+# Runtime and local environments
+streaming_rag/
+**/streaming_rag/
+.streamlit/secrets.toml
+.venv/
+.pytest_cache/
+session-export.json

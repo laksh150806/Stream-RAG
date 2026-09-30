@@ -1,0 +1,6 @@
+{"timestamp_s": 0.0, "turn_id": "1", "text": "I need workshop capacity in", "final": false}
+{"timestamp_s": 0.8, "turn_id": "1", "text": "I need workshop capacity in Pune", "final": false}
+{"timestamp_s": 1.6, "turn_id": "1", "text": "I need workshop capacity in Pune and cancellation policy and catering options", "final": false}
+{"timestamp_s": 2.1, "turn_id": "1", "text": "I need workshop capacity in Pune and cancellation policy and catering options", "final": true}
+{"timestamp_s": 3.0, "turn_id": "2", "text": "Actually city: Delhi", "final": true}
+{"timestamp_s": 4.0, "turn_id": "3", "text": "Please repeat your last answer in two bullets.", "final": true}

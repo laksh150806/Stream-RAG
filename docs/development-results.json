@@ -1,0 +1,449 @@
+{
+  "scope": "Nine self-authored development cases against a synthetic corpus. No Groq calls or official benchmark. Exact source-set matching is strict and small-sample.",
+  "modes": {
+    "streaming": {
+      "passed": 6,
+      "total": 9,
+      "results": [
+        {
+          "case": "compound",
+          "pass": true,
+          "expected": [
+            "pune-cancellation:s1",
+            "pune-capacity:s1",
+            "pune-catering:s1"
+          ],
+          "actual": [
+            "pune-cancellation:s1",
+            "pune-capacity:s1",
+            "pune-catering:s1"
+          ],
+          "searches": 3,
+          "provisional_search_batches": 1
+        },
+        {
+          "case": "late_city",
+          "pass": true,
+          "expected": [
+            "delhi-capacity:s1",
+            "workshop-accessibility:s1"
+          ],
+          "actual": [
+            "delhi-capacity:s1",
+            "workshop-accessibility:s1"
+          ],
+          "searches": 3,
+          "provisional_search_batches": 2
+        },
+        {
+          "case": "format_only",
+          "pass": true,
+          "expected": [
+            "pune-capacity:s1"
+          ],
+          "actual": [
+            "pune-capacity:s1"
+          ],
+          "searches": 1,
+          "provisional_search_batches": 1
+        },
+        {
+          "case": "unknown_city",
+          "pass": true,
+          "expected": [],
+          "actual": [],
+          "searches": 2,
+          "provisional_search_batches": 2
+        },
+        {
+          "case": "unsupported_question",
+          "pass": true,
+          "expected": [],
+          "actual": [],
+          "searches": 1,
+          "provisional_search_batches": 1
+        },
+        {
+          "case": "lexical_alias",
+          "pass": true,
+          "expected": [
+            "bengaluru-catering:s1"
+          ],
+          "actual": [
+            "bengaluru-catering:s1"
+          ],
+          "searches": 1,
+          "provisional_search_batches": 1
+        },
+        {
+          "case": "paraphrase_capacity",
+          "pass": false,
+          "expected": [
+            "pune-capacity:s1"
+          ],
+          "actual": [
+            "pune-capacity:s1",
+            "pune-parking:s1"
+          ],
+          "searches": 1,
+          "provisional_search_batches": 1
+        },
+        {
+          "case": "paraphrase_cancellation",
+          "pass": false,
+          "expected": [
+            "delhi-cancellation:s1"
+          ],
+          "actual": [],
+          "searches": 1,
+          "provisional_search_batches": 1
+        },
+        {
+          "case": "paraphrase_travel",
+          "pass": false,
+          "expected": [
+            "international-travel:s1"
+          ],
+          "actual": [
+            "domestic-travel:s1",
+            "international-travel:s1"
+          ],
+          "searches": 1,
+          "provisional_search_batches": 1
+        }
+      ]
+    },
+    "end_of_turn": {
+      "passed": 6,
+      "total": 9,
+      "results": [
+        {
+          "case": "compound",
+          "pass": true,
+          "expected": [
+            "pune-cancellation:s1",
+            "pune-capacity:s1",
+            "pune-catering:s1"
+          ],
+          "actual": [
+            "pune-cancellation:s1",
+            "pune-capacity:s1",
+            "pune-catering:s1"
+          ],
+          "searches": 3,
+          "provisional_search_batches": 0
+        },
+        {
+          "case": "late_city",
+          "pass": true,
+          "expected": [
+            "delhi-capacity:s1",
+            "workshop-accessibility:s1"
+          ],
+          "actual": [
+            "delhi-capacity:s1",
+            "workshop-accessibility:s1"
+          ],
+          "searches": 3,
+          "provisional_search_batches": 0
+        },
+        {
+          "case": "format_only",
+          "pass": true,
+          "expected": [
+            "pune-capacity:s1"
+          ],
+          "actual": [
+            "pune-capacity:s1"
+          ],
+          "searches": 1,
+          "provisional_search_batches": 0
+        },
+        {
+          "case": "unknown_city",
+          "pass": true,
+          "expected": [],
+          "actual": [],
+          "searches": 2,
+          "provisional_search_batches": 0
+        },
+        {
+          "case": "unsupported_question",
+          "pass": true,
+          "expected": [],
+          "actual": [],
+          "searches": 1,
+          "provisional_search_batches": 0
+        },
+        {
+          "case": "lexical_alias",
+          "pass": true,
+          "expected": [
+            "bengaluru-catering:s1"
+          ],
+          "actual": [
+            "bengaluru-catering:s1"
+          ],
+          "searches": 1,
+          "provisional_search_batches": 0
+        },
+        {
+          "case": "paraphrase_capacity",
+          "pass": false,
+          "expected": [
+            "pune-capacity:s1"
+          ],
+          "actual": [
+            "pune-capacity:s1",
+            "pune-parking:s1"
+          ],
+          "searches": 1,
+          "provisional_search_batches": 0
+        },
+        {
+          "case": "paraphrase_cancellation",
+          "pass": false,
+          "expected": [
+            "delhi-cancellation:s1"
+          ],
+          "actual": [],
+          "searches": 1,
+          "provisional_search_batches": 0
+        },
+        {
+          "case": "paraphrase_travel",
+          "pass": false,
+          "expected": [
+            "international-travel:s1"
+          ],
+          "actual": [
+            "domestic-travel:s1",
+            "international-travel:s1"
+          ],
+          "searches": 1,
+          "provisional_search_batches": 0
+        }
+      ]
+    },
+    "no_decomposition": {
+      "passed": 5,
+      "total": 9,
+      "results": [
+        {
+          "case": "compound",
+          "pass": false,
+          "expected": [
+            "pune-cancellation:s1",
+            "pune-capacity:s1",
+            "pune-catering:s1"
+          ],
+          "actual": [
+            "pune-cancellation:s1",
+            "pune-catering:s1"
+          ],
+          "searches": 1,
+          "provisional_search_batches": 1
+        },
+        {
+          "case": "late_city",
+          "pass": true,
+          "expected": [
+            "delhi-capacity:s1",
+            "workshop-accessibility:s1"
+          ],
+          "actual": [
+            "delhi-capacity:s1",
+            "workshop-accessibility:s1"
+          ],
+          "searches": 2,
+          "provisional_search_batches": 2
+        },
+        {
+          "case": "format_only",
+          "pass": true,
+          "expected": [
+            "pune-capacity:s1"
+          ],
+          "actual": [
+            "pune-capacity:s1"
+          ],
+          "searches": 1,
+          "provisional_search_batches": 1
+        },
+        {
+          "case": "unknown_city",
+          "pass": true,
+          "expected": [],
+          "actual": [],
+          "searches": 2,
+          "provisional_search_batches": 2
+        },
+        {
+          "case": "unsupported_question",
+          "pass": true,
+          "expected": [],
+          "actual": [],
+          "searches": 1,
+          "provisional_search_batches": 1
+        },
+        {
+          "case": "lexical_alias",
+          "pass": true,
+          "expected": [
+            "bengaluru-catering:s1"
+          ],
+          "actual": [
+            "bengaluru-catering:s1"
+          ],
+          "searches": 1,
+          "provisional_search_batches": 1
+        },
+        {
+          "case": "paraphrase_capacity",
+          "pass": false,
+          "expected": [
+            "pune-capacity:s1"
+          ],
+          "actual": [
+            "pune-capacity:s1",
+            "pune-parking:s1"
+          ],
+          "searches": 1,
+          "provisional_search_batches": 1
+        },
+        {
+          "case": "paraphrase_cancellation",
+          "pass": false,
+          "expected": [
+            "delhi-cancellation:s1"
+          ],
+          "actual": [],
+          "searches": 1,
+          "provisional_search_batches": 1
+        },
+        {
+          "case": "paraphrase_travel",
+          "pass": false,
+          "expected": [
+            "international-travel:s1"
+          ],
+          "actual": [
+            "domestic-travel:s1",
+            "international-travel:s1"
+          ],
+          "searches": 1,
+          "provisional_search_batches": 1
+        }
+      ]
+    },
+    "no_refinement": {
+      "passed": 5,
+      "total": 9,
+      "results": [
+        {
+          "case": "compound",
+          "pass": true,
+          "expected": [
+            "pune-cancellation:s1",
+            "pune-capacity:s1",
+            "pune-catering:s1"
+          ],
+          "actual": [
+            "pune-cancellation:s1",
+            "pune-capacity:s1",
+            "pune-catering:s1"
+          ],
+          "searches": 3,
+          "provisional_search_batches": 1
+        },
+        {
+          "case": "late_city",
+          "pass": false,
+          "expected": [
+            "delhi-capacity:s1",
+            "workshop-accessibility:s1"
+          ],
+          "actual": [],
+          "searches": 2,
+          "provisional_search_batches": 1
+        },
+        {
+          "case": "format_only",
+          "pass": true,
+          "expected": [
+            "pune-capacity:s1"
+          ],
+          "actual": [
+            "pune-capacity:s1"
+          ],
+          "searches": 1,
+          "provisional_search_batches": 1
+        },
+        {
+          "case": "unknown_city",
+          "pass": true,
+          "expected": [],
+          "actual": [],
+          "searches": 1,
+          "provisional_search_batches": 1
+        },
+        {
+          "case": "unsupported_question",
+          "pass": true,
+          "expected": [],
+          "actual": [],
+          "searches": 1,
+          "provisional_search_batches": 1
+        },
+        {
+          "case": "lexical_alias",
+          "pass": true,
+          "expected": [
+            "bengaluru-catering:s1"
+          ],
+          "actual": [
+            "bengaluru-catering:s1"
+          ],
+          "searches": 1,
+          "provisional_search_batches": 1
+        },
+        {
+          "case": "paraphrase_capacity",
+          "pass": false,
+          "expected": [
+            "pune-capacity:s1"
+          ],
+          "actual": [
+            "pune-capacity:s1",
+            "pune-parking:s1"
+          ],
+          "searches": 1,
+          "provisional_search_batches": 1
+        },
+        {
+          "case": "paraphrase_cancellation",
+          "pass": false,
+          "expected": [
+            "delhi-cancellation:s1"
+          ],
+          "actual": [],
+          "searches": 1,
+          "provisional_search_batches": 1
+        },
+        {
+          "case": "paraphrase_travel",
+          "pass": false,
+          "expected": [
+            "international-travel:s1"
+          ],
+          "actual": [
+            "domestic-travel:s1",
+            "international-travel:s1"
+          ],
+          "searches": 1,
+          "provisional_search_batches": 1
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,7 @@
+.git
+**/__pycache__
+**/streaming_rag
+**/.venv
+**/secrets.toml
+.env
+archives

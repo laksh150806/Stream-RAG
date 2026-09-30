@@ -1,0 +1,158 @@
+{
+  "name": "Stream-RAG synthetic workshop and travel corpus",
+  "synthetic": true,
+  "documents": [
+    {
+      "id": "pune-capacity",
+      "title": "Pune workshop capacity",
+      "text": "Cedar Hall in Pune has a workshop capacity of 40 people seated at tables. The room includes a projector and a whiteboard.",
+      "metadata": {
+        "city": "Pune",
+        "topic": "capacity"
+      }
+    },
+    {
+      "id": "pune-cancellation",
+      "title": "Pune workshop cancellation",
+      "text": "Workshop cancellation in Pune is free at least 7 days before the booking. Later cancellation retains 25 percent of the venue fee.",
+      "metadata": {
+        "city": "Pune",
+        "topic": "cancellation"
+      }
+    },
+    {
+      "id": "pune-catering",
+      "title": "Pune workshop catering",
+      "text": "Cedar Hall in Pune offers vegetarian workshop catering for INR 450 per person. Meal counts must be confirmed two days before the workshop.",
+      "metadata": {
+        "city": "Pune",
+        "topic": "catering"
+      }
+    },
+    {
+      "id": "pune-parking",
+      "title": "Pune workshop parking",
+      "text": "Cedar Hall in Pune provides 12 visitor parking spaces. Parking reservations must be included with the workshop booking.",
+      "metadata": {
+        "city": "Pune",
+        "topic": "parking"
+      }
+    },
+    {
+      "id": "delhi-capacity",
+      "title": "Delhi workshop capacity",
+      "text": "Maple Hall in Delhi has a workshop capacity of 70 people seated at tables. The room includes a projector and a whiteboard.",
+      "metadata": {
+        "city": "Delhi",
+        "topic": "capacity"
+      }
+    },
+    {
+      "id": "delhi-cancellation",
+      "title": "Delhi workshop cancellation",
+      "text": "Workshop cancellation in Delhi is free at least 10 days before the booking. Later cancellation retains 25 percent of the venue fee.",
+      "metadata": {
+        "city": "Delhi",
+        "topic": "cancellation"
+      }
+    },
+    {
+      "id": "delhi-catering",
+      "title": "Delhi workshop catering",
+      "text": "Maple Hall in Delhi offers vegetarian workshop catering for INR 600 per person. Meal counts must be confirmed two days before the workshop.",
+      "metadata": {
+        "city": "Delhi",
+        "topic": "catering"
+      }
+    },
+    {
+      "id": "delhi-parking",
+      "title": "Delhi workshop parking",
+      "text": "Maple Hall in Delhi provides 12 visitor parking spaces. Parking reservations must be included with the workshop booking.",
+      "metadata": {
+        "city": "Delhi",
+        "topic": "parking"
+      }
+    },
+    {
+      "id": "bengaluru-capacity",
+      "title": "Bengaluru workshop capacity",
+      "text": "Willow Hall in Bengaluru has a workshop capacity of 55 people seated at tables. The room includes a projector and a whiteboard.",
+      "metadata": {
+        "city": "Bengaluru",
+        "topic": "capacity"
+      }
+    },
+    {
+      "id": "bengaluru-cancellation",
+      "title": "Bengaluru workshop cancellation",
+      "text": "Workshop cancellation in Bengaluru is free at least 5 days before the booking. Later cancellation retains 25 percent of the venue fee.",
+      "metadata": {
+        "city": "Bengaluru",
+        "topic": "cancellation"
+      }
+    },
+    {
+      "id": "bengaluru-catering",
+      "title": "Bengaluru workshop catering",
+      "text": "Willow Hall in Bengaluru offers vegetarian workshop catering for INR 500 per person. Meal counts must be confirmed two days before the workshop.",
+      "metadata": {
+        "city": "Bengaluru",
+        "topic": "catering"
+      }
+    },
+    {
+      "id": "bengaluru-parking",
+      "title": "Bengaluru workshop parking",
+      "text": "Willow Hall in Bengaluru provides 12 visitor parking spaces. Parking reservations must be included with the workshop booking.",
+      "metadata": {
+        "city": "Bengaluru",
+        "topic": "parking"
+      }
+    },
+    {
+      "id": "workshop-accessibility",
+      "title": "Workshop accessibility policy",
+      "text": "All demo workshop venues provide step-free entry and an accessible restroom. Accessibility requests can be included with the booking.",
+      "metadata": {
+        "topic": "accessibility"
+      }
+    },
+    {
+      "id": "domestic-travel",
+      "title": "Domestic travel reimbursement",
+      "text": "Domestic travel reimbursement requires an itemized receipt and manager approval. Submit the claim within 30 days after travel.",
+      "metadata": {
+        "trip_type": "domestic",
+        "topic": "reimbursement"
+      }
+    },
+    {
+      "id": "international-travel",
+      "title": "International travel reimbursement",
+      "text": "International travel reimbursement requires an itemized receipt, manager approval, and foreign currency conversion evidence. Submit the claim within 30 days after travel.",
+      "metadata": {
+        "trip_type": "international",
+        "topic": "reimbursement"
+      }
+    },
+    {
+      "id": "booking-before",
+      "title": "Booking approval before travel",
+      "text": "Booking before travel requires manager approval before the reservation is confirmed.",
+      "metadata": {
+        "booking": "before travel",
+        "topic": "booking"
+      }
+    },
+    {
+      "id": "booking-after",
+      "title": "Booking approval after travel",
+      "text": "Booking after travel requires senior director approval and a written exception explaining the late booking.",
+      "metadata": {
+        "booking": "after travel",
+        "topic": "booking"
+      }
+    }
+  ]
+}
