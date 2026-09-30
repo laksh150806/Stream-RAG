@@ -21,6 +21,13 @@ BBC_PLAYLIST_URLS = (
 )
 
 BBC_STREAM_URLS = (
+    # Compatibility relay used by several current BBC radio clients. It resolves
+    # the BBC World Service HLS stream for the caller and avoids hard-coding one CDN.
+    'https://lstn.lv/bbcradio.m3u8?station=bbc_world_service&bitrate=96000',
+    'http://lstn.lv/bbcradio.m3u8?station=bbc_world_service&bitrate=96000',
+    # BBC redirector manifest used for non-UK World Service listeners.
+    'https://a.files.bbci.co.uk/media/live/manifesto/audio/simulcast/hls/nonuk/sbr_low/ak/bbc_world_service.m3u8',
+    'http://a.files.bbci.co.uk/media/live/manifesto/audio/simulcast/hls/nonuk/sbr_low/ak/bbc_world_service.m3u8',
     # Feed used by the current BBC.com World Service live player.
     'https://as-hls-ww.live.cf.md.bbci.co.uk/pool_07364996/live/ww/'
     'bbc_world_service_news_internet/bbc_world_service_news_internet.isml/'
@@ -141,10 +148,14 @@ def _candidate_streams():
 
 def _ffmpeg_reason(stderr):
     text = (stderr or b'').decode('utf-8', errors='ignore').casefold()
-    if '403 forbidden' in text or 'server returned 403' in text:
+    if '403 forbidden' in text or 'server returned 403' in text or 'http error 403' in text:
         return 'media CDN returned HTTP 403'
-    if '404 not found' in text or 'server returned 404' in text:
+    if '401 unauthorized' in text or 'server returned 401' in text or 'http error 401' in text:
+        return 'stream endpoint returned HTTP 401'
+    if '404 not found' in text or 'server returned 404' in text or 'http error 404' in text:
         return 'stream endpoint returned HTTP 404'
+    if 'redirection to relative url' in text or 'too many redirects' in text:
+        return 'stream redirect could not be followed'
     if 'timed out' in text or 'timeout' in text:
         return 'stream connection timed out'
     if 'failed to resolve' in text or 'name or service not known' in text:
@@ -184,7 +195,11 @@ def capture_audio(seconds=20):
                 '-nostdin',
                 '-loglevel', 'error',
                 '-user_agent', 'Mozilla/5.0 Stream-RAG/1.0',
-                '-rw_timeout', '8000000',
+                '-headers', 'Referer: https://www.bbc.com/\r\nOrigin: https://www.bbc.com\r\nAccept: */*\r\n',
+                '-rw_timeout', '10000000',
+                '-reconnect', '1',
+                '-reconnect_streamed', '1',
+                '-reconnect_delay_max', '2',
                 '-i', stream_url,
                 '-t', str(seconds),
                 '-vn',
@@ -212,13 +227,20 @@ def capture_audio(seconds=20):
                 raise RuntimeError('Bundled FFmpeg could not be started on this server.')
 
         reason = failures[-1] if failures else 'no usable stream'
-        hosts = {urlparse(u).hostname for u in streams if urlparse(u).hostname}
+        hosts = [urlparse(u).hostname or 'unknown' for u in streams]
+        host_summary = []
+        for host, failure in zip(hosts, failures):
+            label = f'{host}: {failure}'
+            if label not in host_summary:
+                host_summary.append(label)
+        short_summary = '; '.join(host_summary[-4:])
         raise RuntimeError(
             f'BBC live capture failed after trying {len(streams)} source'
-            f'{"s" if len(streams) != 1 else ""} across {len(hosts)} host'
-            f'{"s" if len(hosts) != 1 else ""}; last failure: {reason}. '
-            'The media CDN may be blocking this hosting region. '
-            'Uploaded audio and pasted transcripts remain available.'
+            f'{"s" if len(streams) != 1 else ""} across {len(set(hosts))} host'
+            f'{"s" if len(set(hosts)) != 1 else ""}. '
+            f'Last checks: {short_summary or reason}. '
+            'If all BBC CDN routes are blocked by this Render region, uploaded audio '
+            'and pasted transcripts remain available.'
         )
 
 
