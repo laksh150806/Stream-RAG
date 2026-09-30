@@ -60,7 +60,7 @@ engine = st.session_state.engine
 st.markdown('<div class="eyebrow">LISTEN EARLY · KEEP CONTEXT · SHOW THE EVIDENCE</div>', unsafe_allow_html=True)
 st.title('Answers that evolve with you.')
 st.caption('Watch retrieval begin before a transcript ends, then refine the same answer as details change.')
-session_tab, corpus_tab, trace_tab, about_tab = st.tabs(['Live session', 'Evidence library', 'Trace & export', 'How it works'])
+session_tab, corpus_tab, trace_tab, eval_tab, about_tab = st.tabs(['Live session', 'Evidence library', 'Trace & export', 'Evaluation', 'How it works'])
 
 
 def controller_status():
@@ -238,6 +238,36 @@ with trace_tab:
     st.dataframe(engine.events, width='stretch')
     with st.expander('Answer version history'):
         st.json(engine.versions)
+
+with eval_tab:
+    st.subheader('Development evaluation')
+    report = json.loads((ROOT / 'docs/development-results.json').read_text())
+    streaming = report['modes']['streaming']
+    baseline = report['modes']['end_of_turn']
+    no_decomp = report['modes']['no_decomposition']
+    no_refine = report['modes']['no_refinement']
+
+    a, b, c, d = st.columns(4)
+    a.metric('Streaming source checks', f"{streaming['passed']}/{streaming['total']}")
+    b.metric('End-of-turn source checks', f"{baseline['passed']}/{baseline['total']}")
+    c.metric('No decomposition', f"{no_decomp['passed']}/{no_decomp['total']}")
+    d.metric('No refinement', f"{no_refine['passed']}/{no_refine['total']}")
+
+    stream_early = sum(r['provisional_search_batches'] > 0 for r in streaming['results'])
+    baseline_early = sum(r['provisional_search_batches'] > 0 for r in baseline['results'])
+    st.success(f'Early retrieval: streaming {stream_early}/{streaming["total"]} cases · end-of-turn baseline {baseline_early}/{baseline["total"]}.')
+    st.caption(report['scope'])
+    st.dataframe(
+        [{
+            'case': r['case'],
+            'pass': r['pass'],
+            'searches': r['searches'],
+            'provisional batches': r['provisional_search_batches'],
+        } for r in streaming['results']],
+        width='stretch',
+        hide_index=True,
+    )
+    st.caption('These are authored synthetic development checks, not official or held-out benchmark results. CI reruns unit/UI tests and requires all streaming development checks to pass.')
 
 with about_tab:
     st.markdown('''### What this version does

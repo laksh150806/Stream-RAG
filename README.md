@@ -2,7 +2,7 @@
 
 An inspectable prototype for **Theme 4: Streaming Live RAG**. Cumulative transcript fragments trigger early retrieval, compound questions create separate jobs, and late scope changes update dependent claims while retaining unaffected evidence.
 
-The default workspace runs **without an API key or model download**. It uses local BM25 retrieval, English parsing rules, and exact source excerpts. It is not a dense retriever or a generative chatbot. The original BBC/Groq experiment remains available as an optional page.
+The default workspace runs **without an API key or model download**. It uses local BM25 retrieval with concept normalization, metadata-aware constraint inference, English parsing rules, and exact source excerpts. It is not a dense retriever or a generative chatbot. The original BBC/Groq experiment remains available as an optional page.
 
 ## Deploy
 
@@ -70,7 +70,7 @@ python -m unittest discover -s tests -v
 python scripts/evaluate.py
 ```
 
-UI tests require Streamlit and are skipped without it. The nine-case authored development evaluation passes **6/9 exact source-set checks**. Three paraphrase challenges expose lexical limitations. This is not an official or held-out accuracy score. See [evaluation](docs/evaluation.md) and [results](docs/development-results.json) for the baseline and two ablations.
+UI tests require Streamlit and are skipped without it. The nine-case authored development evaluation now passes **9/9 exact source-set checks** in CI. The end-of-turn baseline also reaches 9/9 final source accuracy, but triggers **zero provisional retrieval batches**, while the streaming controller retrieves before final input in all nine authored cases. This is not an official or held-out accuracy score. See [evaluation](docs/evaluation.md) and [results](docs/development-results.json) for the baseline and two ablations.
 
 ## Hosted live-audio/news mode
 

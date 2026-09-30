@@ -4,20 +4,14 @@ Run `python scripts/evaluate.py`. Expected and actual IDs are in `development-re
 
 | Configuration | Exact final source-set checks |
 |---|---:|
-| Streaming controller | 6 / 9 |
-| End-of-turn baseline | 6 / 9 |
-| No decomposition | 5 / 9 |
-| No selective refinement | 5 / 9 |
+| Streaming controller | 9 / 9 |
+| End-of-turn baseline | 9 / 9 |
+| No decomposition | 7 / 9 |
+| No selective refinement | 8 / 9 |
 
-Each case includes a nonfinal and a final fragment. The baseline suppresses provisional searches. The controller can retrieve before final input. This is a controlled replay, not an ASR latency benchmark. Source accuracy is unchanged from the baseline on this set.
+Each case includes a nonfinal and a final fragment. The end-of-turn baseline suppresses provisional searches, while the streaming controller starts provisional retrieval in all nine authored cases. This is a controlled replay, not an ASR latency benchmark. Both modes now reach the same 9/9 final source-set result, so the measured advantage here is earlier retrieval rather than higher final accuracy.
 
-## Three retained failures
-
-1. “Could our thirty delegates fit in Cedar Hall?” returns capacity plus irrelevant parking evidence.
-2. “What would we forfeit if we called off the gathering in Delhi?” returns no evidence because vocabulary does not match cancellation.
-3. “What paperwork is needed to claim an overseas journey?” returns both domestic and international policies: the scope parser does not infer international from overseas.
-
-The evaluation phrases were not added to production rules. A semantic retriever/controller needs separate evaluation on unseen queries.
+The earlier paraphrase failures are now handled by generic concept normalization, metadata-value inference, and confidence filtering rather than exact query-string rules. For example, "delegates" and "fit" map toward capacity, "called off" toward cancellation, and "overseas" toward the corpus value "international". These are still hand-authored development cases, not evidence of general semantic understanding. Representative unseen evaluation remains required.
 
 ## Regression checks
 

@@ -2,7 +2,7 @@
   "scope": "Nine self-authored development cases against a synthetic corpus. No Groq calls or official benchmark. Exact source-set matching is strict and small-sample.",
   "modes": {
     "streaming": {
-      "passed": 6,
+      "passed": 9,
       "total": 9,
       "results": [
         {
@@ -77,35 +77,35 @@
         },
         {
           "case": "paraphrase_capacity",
-          "pass": false,
+          "pass": true,
           "expected": [
             "pune-capacity:s1"
           ],
           "actual": [
-            "pune-capacity:s1",
-            "pune-parking:s1"
+            "pune-capacity:s1"
           ],
           "searches": 1,
           "provisional_search_batches": 1
         },
         {
           "case": "paraphrase_cancellation",
-          "pass": false,
+          "pass": true,
           "expected": [
             "delhi-cancellation:s1"
           ],
-          "actual": [],
+          "actual": [
+            "delhi-cancellation:s1"
+          ],
           "searches": 1,
           "provisional_search_batches": 1
         },
         {
           "case": "paraphrase_travel",
-          "pass": false,
+          "pass": true,
           "expected": [
             "international-travel:s1"
           ],
           "actual": [
-            "domestic-travel:s1",
             "international-travel:s1"
           ],
           "searches": 1,
@@ -114,7 +114,7 @@
       ]
     },
     "end_of_turn": {
-      "passed": 6,
+      "passed": 9,
       "total": 9,
       "results": [
         {
@@ -189,35 +189,35 @@
         },
         {
           "case": "paraphrase_capacity",
-          "pass": false,
+          "pass": true,
           "expected": [
             "pune-capacity:s1"
           ],
           "actual": [
-            "pune-capacity:s1",
-            "pune-parking:s1"
+            "pune-capacity:s1"
           ],
           "searches": 1,
           "provisional_search_batches": 0
         },
         {
           "case": "paraphrase_cancellation",
-          "pass": false,
+          "pass": true,
           "expected": [
             "delhi-cancellation:s1"
           ],
-          "actual": [],
+          "actual": [
+            "delhi-cancellation:s1"
+          ],
           "searches": 1,
           "provisional_search_batches": 0
         },
         {
           "case": "paraphrase_travel",
-          "pass": false,
+          "pass": true,
           "expected": [
             "international-travel:s1"
           ],
           "actual": [
-            "domestic-travel:s1",
             "international-travel:s1"
           ],
           "searches": 1,
@@ -226,7 +226,7 @@
       ]
     },
     "no_decomposition": {
-      "passed": 5,
+      "passed": 7,
       "total": 9,
       "results": [
         {
@@ -246,17 +246,16 @@
         },
         {
           "case": "late_city",
-          "pass": true,
+          "pass": false,
           "expected": [
             "delhi-capacity:s1",
             "workshop-accessibility:s1"
           ],
           "actual": [
-            "delhi-capacity:s1",
             "workshop-accessibility:s1"
           ],
-          "searches": 2,
-          "provisional_search_batches": 2
+          "searches": 1,
+          "provisional_search_batches": 1
         },
         {
           "case": "format_only",
@@ -300,35 +299,35 @@
         },
         {
           "case": "paraphrase_capacity",
-          "pass": false,
+          "pass": true,
           "expected": [
             "pune-capacity:s1"
           ],
           "actual": [
-            "pune-capacity:s1",
-            "pune-parking:s1"
+            "pune-capacity:s1"
           ],
           "searches": 1,
           "provisional_search_batches": 1
         },
         {
           "case": "paraphrase_cancellation",
-          "pass": false,
+          "pass": true,
           "expected": [
             "delhi-cancellation:s1"
           ],
-          "actual": [],
+          "actual": [
+            "delhi-cancellation:s1"
+          ],
           "searches": 1,
           "provisional_search_batches": 1
         },
         {
           "case": "paraphrase_travel",
-          "pass": false,
+          "pass": true,
           "expected": [
             "international-travel:s1"
           ],
           "actual": [
-            "domestic-travel:s1",
             "international-travel:s1"
           ],
           "searches": 1,
@@ -337,7 +336,7 @@
       ]
     },
     "no_refinement": {
-      "passed": 5,
+      "passed": 8,
       "total": 9,
       "results": [
         {
@@ -409,35 +408,35 @@
         },
         {
           "case": "paraphrase_capacity",
-          "pass": false,
+          "pass": true,
           "expected": [
             "pune-capacity:s1"
           ],
           "actual": [
-            "pune-capacity:s1",
-            "pune-parking:s1"
+            "pune-capacity:s1"
           ],
           "searches": 1,
           "provisional_search_batches": 1
         },
         {
           "case": "paraphrase_cancellation",
-          "pass": false,
+          "pass": true,
           "expected": [
             "delhi-cancellation:s1"
           ],
-          "actual": [],
+          "actual": [
+            "delhi-cancellation:s1"
+          ],
           "searches": 1,
           "provisional_search_batches": 1
         },
         {
           "case": "paraphrase_travel",
-          "pass": false,
+          "pass": true,
           "expected": [
             "international-travel:s1"
           ],
           "actual": [
-            "domestic-travel:s1",
             "international-travel:s1"
           ],
           "searches": 1,
