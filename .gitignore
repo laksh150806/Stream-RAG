@@ -1,0 +1,15 @@
+# Captured data (too large for git)
+Live-Streaming-Data-RAG/streaming_rag/
+
+# Streamlit secrets (never commit real keys!)
+Live-Streaming-Data-RAG/.streamlit/secrets.toml
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# OS
+.DS_Store
+Thumbs.db

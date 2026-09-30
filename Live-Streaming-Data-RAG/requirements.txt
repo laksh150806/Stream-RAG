@@ -1,0 +1,10 @@
+streamlit
+langchain-groq
+langchain-huggingface
+langchain-community
+langchain-core
+groq
+chromadb>=0.5.0
+numpy<2.0.0
+sentence-transformers
+pysqlite3-binary
