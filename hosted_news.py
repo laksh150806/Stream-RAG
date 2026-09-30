@@ -46,16 +46,41 @@ def capture_audio(seconds=20):
     import imageio_ffmpeg
     if not 5 <= seconds <= 60:
         raise ValueError('Capture duration must be 5–60 seconds.')
+
+    # BBC's older direct MP3 endpoint is not consistently reachable from
+    # hosted cloud environments. Prefer the current worldwide HLS feed and
+    # retain the legacy endpoints as fallbacks.
+    streams = [
+        'https://as-hls-ww-live.akamaized.net/pool_904/live/ww/bbc_world_service/bbc_world_service.isml/bbc_world_service-audio=96000.norewind.m3u8',
+        'https://stream.live.vc.bbcmedia.co.uk/bbc_world_service',
+        'http://stream.live.vc.bbcmedia.co.uk/bbc_world_service',
+    ]
+
     with tempfile.TemporaryDirectory(prefix='stream-rag-') as temp:
         path = Path(temp) / 'broadcast.wav'
-        cmd = [imageio_ffmpeg.get_ffmpeg_exe(), '-nostdin', '-loglevel', 'error',
-               '-rw_timeout', '15000000', '-i', 'https://stream.live.vc.bbcmedia.co.uk/bbc_world_service',
-               '-t', str(seconds), '-vn', '-ac', '1', '-ar', '16000', '-y', str(path)]
-        try:
-            subprocess.run(cmd, check=True, capture_output=True, timeout=seconds + 25)
-        except (OSError, subprocess.SubprocessError) as exc:
-            raise RuntimeError('BBC capture failed. Try uploading an audio clip instead.') from exc
-        return path.read_bytes()
+        ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
+        last_error = None
+
+        for stream_url in streams:
+            if path.exists():
+                path.unlink()
+            cmd = [
+                ffmpeg, '-nostdin', '-loglevel', 'error',
+                '-user_agent', 'Mozilla/5.0 Stream-RAG/1.0',
+                '-rw_timeout', '15000000',
+                '-reconnect', '1', '-reconnect_streamed', '1', '-reconnect_delay_max', '2',
+                '-i', stream_url,
+                '-t', str(seconds), '-vn', '-ac', '1', '-ar', '16000',
+                '-c:a', 'pcm_s16le', '-y', str(path),
+            ]
+            try:
+                subprocess.run(cmd, check=True, capture_output=True, timeout=seconds + 25)
+                if path.exists() and path.stat().st_size > 1024:
+                    return path.read_bytes()
+            except (OSError, subprocess.SubprocessError) as exc:
+                last_error = exc
+
+        raise RuntimeError('BBC live capture is currently unavailable from the hosted server. Try again shortly or upload an audio clip.') from last_error
 
 
 def transcribe(audio, filename='broadcast.wav'):
