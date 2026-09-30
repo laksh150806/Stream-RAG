@@ -51,7 +51,13 @@ def capture_audio(seconds=20):
     # hosted cloud environments. Prefer the current worldwide HLS feed and
     # retain the legacy endpoints as fallbacks.
     streams = [
-        'https://as-hls-ww-live.akamaized.net/pool_904/live/ww/bbc_world_service/bbc_world_service.isml/bbc_world_service-audio=96000.norewind.m3u8',
+        # Current worldwide BBC World Service HLS pool.
+        'https://as-hls-ww-live.akamaized.net/pool_87948813/live/ww/bbc_world_service/bbc_world_service.isml/bbc_world_service-audio=96000.norewind.m3u8',
+        'http://as-hls-ww-live.akamaized.net/pool_87948813/live/ww/bbc_world_service/bbc_world_service.isml/bbc_world_service-audio=96000.norewind.m3u8',
+        # South Asia World Service variant is a useful fallback for the Singapore Render region.
+        'https://as-hls-ww-live.akamaized.net/pool_80670621/live/ww/bbc_world_service_south_asia/bbc_world_service_south_asia.isml/bbc_world_service_south_asia-audio=96000.norewind.m3u8',
+        'http://as-hls-ww-live.akamaized.net/pool_80670621/live/ww/bbc_world_service_south_asia/bbc_world_service_south_asia.isml/bbc_world_service_south_asia-audio=96000.norewind.m3u8',
+        # Legacy direct stream, kept only as a last fallback.
         'https://stream.live.vc.bbcmedia.co.uk/bbc_world_service',
         'http://stream.live.vc.bbcmedia.co.uk/bbc_world_service',
     ]
