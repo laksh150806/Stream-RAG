@@ -13,6 +13,12 @@ st.markdown('''<style>
 .block-container{max-width:1280px;padding-top:2rem} h1{letter-spacing:-.055em}
 [data-testid="stMetric"]{background:rgba(34,211,238,.06);border:1px solid rgba(34,211,238,.18);border-radius:12px;padding:14px}
 .eyebrow{color:#22d3ee;font-size:12px;letter-spacing:2px;font-weight:700}
+.controller-card{border:1px solid rgba(148,163,184,.22);border-radius:14px;padding:14px 16px;margin:4px 0 14px;background:rgba(15,23,42,.28)}
+.controller-label{font-size:11px;letter-spacing:1.6px;font-weight:700;color:#94a3b8;margin-bottom:6px}
+.controller-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.controller-state{font-size:18px;font-weight:800;letter-spacing:.04em}
+.controller-detail{font-size:13px;color:#cbd5e1}
+.state-retrieve{color:#22c55e}.state-wait{color:#f59e0b}.state-suppress{color:#38bdf8}.state-reuse{color:#a78bfa}.state-idle{color:#94a3b8}
 </style>''', unsafe_allow_html=True)
 
 
@@ -57,8 +63,33 @@ st.caption('Watch retrieval begin before a transcript ends, then refine the same
 session_tab, corpus_tab, trace_tab, about_tab = st.tabs(['Live session', 'Evidence library', 'Trace & export', 'How it works'])
 
 
+def controller_status():
+    """Return the latest controller decision for judge-visible observability."""
+    for event in reversed(engine.events):
+        kind = event.get('event')
+        if kind == 'retrieval_suppressed':
+            return 'SUPPRESS', 'Presentation-only request · no corpus search', 'suppress'
+        if kind == 'retrieval_started':
+            count = len(event.get('sub_queries', []))
+            trigger = str(event.get('trigger', 'retrieval')).replace('_', ' ').title()
+            return 'RETRIEVE', f'{trigger} · {count} search job' + ('s' if count != 1 else ''), 'retrieve'
+        if kind == 'retrieval_wait':
+            reason = str(event.get('reason', 'waiting for a stable intent')).replace('_', ' ')
+            return 'WAIT', reason.capitalize(), 'wait'
+        if kind == 'retrieval_reused':
+            return 'REUSE', 'Existing evidence reused · no new search', 'reuse'
+    return 'IDLE', 'Waiting for transcript input', 'idle'
+
+
 def draw_answer():
     snapshot = engine.snapshot()
+    state, detail, css_state = controller_status()
+    st.markdown(
+        f'<div class="controller-card"><div class="controller-label">RETRIEVAL CONTROLLER</div>'
+        f'<div class="controller-row"><span class="controller-state state-{css_state}">{state}</span>'
+        f'<span class="controller-detail">{detail}</span></div></div>',
+        unsafe_allow_html=True,
+    )
     a, b, c = st.columns(3)
     a.metric('Answer version', snapshot['answer_version'])
     b.metric('Searches executed', snapshot['retrieval_count'])
