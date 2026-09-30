@@ -37,7 +37,7 @@ with st.sidebar:
     st.title('◉ Stream-RAG')
     st.caption('THEME 4 WORKSPACE')
     st.success('Corpus-only mode · No API key needed')
-    st.caption('Answers are source excerpts. This mode uses local BM25 retrieval and rule-based intent parsing; it does not call a generative LLM.')
+    st.caption('Answers are source excerpts. This mode uses local BM25 retrieval with concept normalization, metadata-aware constraints, and rule-based intent parsing; it does not call a generative LLM.')
     upload = st.file_uploader('Replace evidence corpus', type=['json'])
     if st.button('Load uploaded corpus', disabled=upload is None):
         try:
@@ -81,6 +81,52 @@ def controller_status():
     return 'IDLE', 'Waiting for transcript input', 'idle'
 
 
+def early_lead():
+    """Seconds retrieval started before the final transcript for the active turn."""
+    if engine.turn is None:
+        return None
+    rows = [e for e in engine.events if e.get('turn_id') == engine.turn]
+    starts = [e['timestamp_s'] for e in rows if e.get('event') == 'retrieval_started' and e.get('trigger') == 'provisional']
+    finals = [e['timestamp_s'] for e in rows if e.get('event') == 'transcript_received' and e.get('final')]
+    if not starts:
+        return None
+    if not finals:
+        return 'active'
+    return max(0.0, min(finals) - min(starts))
+
+
+def decision_timeline():
+    if engine.turn is None:
+        return []
+    rows = []
+    labels = {
+        'transcript_received': 'TRANSCRIPT',
+        'retrieval_wait': 'WAIT',
+        'retrieval_started': 'RETRIEVE',
+        'retrieval_completed': 'EVIDENCE',
+        'refinement_planned': 'REFINE',
+        'retrieval_suppressed': 'SUPPRESS',
+        'retrieval_reused': 'REUSE',
+        'answer_updated': 'ANSWER',
+    }
+    for event in engine.events:
+        kind = event.get('event')
+        if event.get('turn_id') != engine.turn or kind not in labels:
+            continue
+        if kind == 'transcript_received':
+            detail = ('final · ' if event.get('final') else 'partial · ') + str(event.get('text', ''))[:90]
+        elif kind == 'retrieval_started':
+            detail = f"{event.get('trigger', '')} · {len(event.get('sub_queries', []))} job(s)"
+        elif kind == 'retrieval_completed':
+            detail = ', '.join(event.get('source_ids', [])) or 'no evidence'
+        elif kind == 'refinement_planned':
+            detail = 'changed: ' + ', '.join(event.get('changed_constraints', []))
+        else:
+            detail = str(event.get('reason', '')).replace('_', ' ')
+        rows.append({'t (s)': event.get('timestamp_s'), 'decision': labels[kind], 'detail': detail})
+    return rows[-12:]
+
+
 def draw_answer():
     snapshot = engine.snapshot()
     state, detail, css_state = controller_status()
@@ -90,10 +136,12 @@ def draw_answer():
         f'<span class="controller-detail">{detail}</span></div></div>',
         unsafe_allow_html=True,
     )
-    a, b, c = st.columns(3)
+    lead = early_lead()
+    a, b, c1, d = st.columns(4)
     a.metric('Answer version', snapshot['answer_version'])
     b.metric('Searches executed', snapshot['retrieval_count'])
-    c.metric('Active intents', len(snapshot['claims']))
+    c1.metric('Active intents', len(snapshot['claims']))
+    d.metric('Early retrieval lead', '—' if lead is None else ('before final' if lead == 'active' else f'{lead:.1f} s'))
     if snapshot['constraints']:
         st.caption('Current scope: ' + ' · '.join(f'{k}: {v}' for k, v in snapshot['constraints'].items()))
     if not snapshot['claims']:
@@ -164,9 +212,15 @@ with session_tab:
     else:
         with output.container():
             draw_answer()
+
+    timeline = decision_timeline()
+    if timeline:
+        st.markdown('**Live decision timeline**')
+        st.dataframe(timeline, width='stretch', hide_index=True)
+
     st.divider()
     st.markdown('**Try this sequence**')
-    st.code('Workshop capacity in Pune and cancellation policy and catering options\nActually city: Delhi\nPlease repeat your last answer in two bullets.', language=None)
+    st.code('Workshop capacity in Pune and cancellation policy and catering options and accessibility\nActually city: Delhi\nPlease repeat your last answer in two bullets.', language=None)
 
 with corpus_tab:
     st.subheader('Every answer starts here')
@@ -194,7 +248,7 @@ with about_tab:
 5. Keeps conversation state in this browser session and exports a complete event trace.
 
 ### Current limits
-The controller and decomposition are English rules, and retrieval is lexical BM25 with a small synonym map. Implicit constraints, complex negation and unfamiliar paraphrases may fail. Excerpts prove source provenance, not that every retrieved passage answers the question. This is an engineering prototype; official hackathon gates have not been measured.
+The controller and decomposition are English rules. Retrieval combines BM25 with concept normalization, metadata-value inference, and confidence filtering. This improves common paraphrases while keeping the core deterministic and inspectable; complex negation and truly unfamiliar language can still fail. Excerpts prove source provenance, not that every retrieved passage answers the question. This is an engineering prototype; official hackathon gates have not been measured.
 
 The hosted live-audio page uses browser recording or uploaded audio, Groq Whisper transcription, BM25 retrieval, Groq answer generation, and session-only transcripts. Direct BBC server capture is retained only as an experimental fallback because some cloud regions block BBC media CDNs.
 ''')
