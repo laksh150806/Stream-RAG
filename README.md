@@ -72,7 +72,7 @@ python -m unittest discover -s tests -v
 python scripts/evaluate.py
 ```
 
-UI tests require Streamlit and are skipped without it. The development suite now includes independent multi-sentence scopes in addition to the original authored cases. CI requires every streaming source-set check to pass. The end-of-turn baseline also reaches 9/9 final source accuracy, but triggers **zero provisional retrieval batches**, while the streaming controller retrieves before final input in all nine authored cases. This is not an official or held-out accuracy score. See [evaluation](docs/evaluation.md) and [results](docs/development-results.json) for the baseline and two ablations.
+UI tests require Streamlit and are skipped without it. The development suite now contains **10 authored cases**, including independent multi-sentence scopes. The verified streaming run passes **10/10** exact source-set checks; the end-of-turn baseline also reaches 10/10 final evidence but performs **0 provisional retrieval batches**, while Stream-RAG retrieves before final input in all 10 cases. The end-of-turn baseline also reaches 9/9 final source accuracy, but triggers **zero provisional retrieval batches**, while the streaming controller retrieves before final input in all nine authored cases. This is not an official or held-out accuracy score. See [evaluation](docs/evaluation.md) and [results](docs/development-results.json) for the baseline and two ablations.
 
 ## Hosted live-audio/news mode
 

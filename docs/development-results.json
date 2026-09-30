@@ -1,9 +1,9 @@
 {
-  "scope": "Nine self-authored development cases against a synthetic corpus. No Groq calls or official benchmark. Exact source-set matching is strict and small-sample.",
+  "scope": "Ten self-authored development cases against a synthetic corpus. No Groq calls or official benchmark. Exact source-set matching is strict and small-sample.",
   "modes": {
     "streaming": {
-      "passed": 9,
-      "total": 9,
+      "passed": 10,
+      "total": 10,
       "results": [
         {
           "case": "compound",
@@ -109,13 +109,29 @@
             "international-travel:s1"
           ],
           "searches": 1,
+          "provisional_search_batches": 1
+        },
+        {
+          "case": "multi_sentence_scopes",
+          "pass": true,
+          "expected": [
+            "bengaluru-catering:s1",
+            "delhi-cancellation:s1",
+            "pune-capacity:s1"
+          ],
+          "actual": [
+            "bengaluru-catering:s1",
+            "delhi-cancellation:s1",
+            "pune-capacity:s1"
+          ],
+          "searches": 3,
           "provisional_search_batches": 1
         }
       ]
     },
     "end_of_turn": {
-      "passed": 9,
-      "total": 9,
+      "passed": 10,
+      "total": 10,
       "results": [
         {
           "case": "compound",
@@ -221,13 +237,29 @@
             "international-travel:s1"
           ],
           "searches": 1,
+          "provisional_search_batches": 0
+        },
+        {
+          "case": "multi_sentence_scopes",
+          "pass": true,
+          "expected": [
+            "bengaluru-catering:s1",
+            "delhi-cancellation:s1",
+            "pune-capacity:s1"
+          ],
+          "actual": [
+            "bengaluru-catering:s1",
+            "delhi-cancellation:s1",
+            "pune-capacity:s1"
+          ],
+          "searches": 3,
           "provisional_search_batches": 0
         }
       ]
     },
     "no_decomposition": {
       "passed": 7,
-      "total": 9,
+      "total": 10,
       "results": [
         {
           "case": "compound",
@@ -329,6 +361,21 @@
           ],
           "actual": [
             "international-travel:s1"
+          ],
+          "searches": 1,
+          "provisional_search_batches": 1
+        },
+        {
+          "case": "multi_sentence_scopes",
+          "pass": false,
+          "expected": [
+            "bengaluru-catering:s1",
+            "delhi-cancellation:s1",
+            "pune-capacity:s1"
+          ],
+          "actual": [
+            "bengaluru-cancellation:s1",
+            "bengaluru-catering:s1"
           ],
           "searches": 1,
           "provisional_search_batches": 1
@@ -336,8 +383,8 @@
       ]
     },
     "no_refinement": {
-      "passed": 8,
-      "total": 9,
+      "passed": 9,
+      "total": 10,
       "results": [
         {
           "case": "compound",
@@ -440,6 +487,22 @@
             "international-travel:s1"
           ],
           "searches": 1,
+          "provisional_search_batches": 1
+        },
+        {
+          "case": "multi_sentence_scopes",
+          "pass": true,
+          "expected": [
+            "bengaluru-catering:s1",
+            "delhi-cancellation:s1",
+            "pune-capacity:s1"
+          ],
+          "actual": [
+            "bengaluru-catering:s1",
+            "delhi-cancellation:s1",
+            "pune-capacity:s1"
+          ],
+          "searches": 3,
           "provisional_search_batches": 1
         }
       ]
