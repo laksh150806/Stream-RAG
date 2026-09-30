@@ -12,10 +12,39 @@ from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 
 STOP = set('a an the is are was were be to of for from in on at with and or i we you me my our your it this that what how where when which please need want know tell about can could would do does did have has had actually instead also there'.split())
-ALIASES = {'attendees': 'people', 'attendee': 'people', 'persons': 'people', 'seats': 'capacity', 'seating': 'capacity', 'food': 'catering', 'meals': 'catering', 'meal': 'catering', 'cancel': 'cancellation', 'canceling': 'cancellation', 'cancelling': 'cancellation', 'refund': 'cancellation', 'refunds': 'cancellation', 'expenses': 'reimbursement', 'expense': 'reimbursement'}
+ALIASES = {
+    'attendees': 'people', 'attendee': 'people', 'persons': 'people',
+    'delegates': 'people', 'delegate': 'people', 'participants': 'people',
+    'participant': 'people', 'guests': 'people', 'guest': 'people',
+    'seats': 'capacity', 'seating': 'capacity', 'fit': 'capacity',
+    'fits': 'capacity', 'fitting': 'capacity', 'accommodate': 'capacity',
+    'accommodates': 'capacity', 'accommodating': 'capacity',
+    'food': 'catering', 'meals': 'catering', 'meal': 'catering',
+    'cancel': 'cancellation', 'cancelled': 'cancellation',
+    'canceled': 'cancellation', 'canceling': 'cancellation',
+    'cancelling': 'cancellation', 'refund': 'cancellation',
+    'refunds': 'cancellation', 'forfeit': 'cancellation',
+    'forfeited': 'cancellation', 'penalty': 'cancellation',
+    'penalties': 'cancellation', 'expenses': 'reimbursement',
+    'expense': 'reimbursement', 'claim': 'reimbursement',
+    'claims': 'reimbursement', 'claimed': 'reimbursement',
+    'claiming': 'reimbursement', 'overseas': 'international',
+    'abroad': 'international', 'foreign': 'international',
+    'wheelchair': 'accessibility', 'accessible': 'accessibility',
+    'cars': 'parking', 'car': 'parking', 'vehicles': 'parking',
+    'vehicle': 'parking',
+}
+PHRASE_ALIASES = (
+    (re.compile(r'\b(?:call|called|calling)\s+off\b', re.I), ' cancellation '),
+    (re.compile(r'\bmoney\s+back\b', re.I), ' cancellation '),
+    (re.compile(r'\boutside\s+(?:the\s+)?country\b', re.I), ' international '),
+    (re.compile(r'\bstep[- ]?free\b', re.I), ' accessibility '),
+)
 
 
 def tokens(text):
+    for pattern, replacement in PHRASE_ALIASES:
+        text = pattern.sub(replacement, text)
     words = re.findall(r"[\w]+", text.casefold())
     return [ALIASES.get(w, w[:-1] if len(w) > 4 and w.endswith('s') else w) for w in words if w not in STOP]
 
