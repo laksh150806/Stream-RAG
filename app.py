@@ -54,7 +54,7 @@ with st.sidebar:
         st.rerun()
     st.divider()
     st.caption('The bundled corpus is synthetic demo data, not real company or travel policy. Uploaded evidence stays in this session.')
-    st.page_link('pages/2_Live_News.py', label='BBC live-news mode', icon='📻')
+    st.page_link('pages/2_Live_News.py', label='Live audio / news RAG', icon='🎙️')
 
 engine = st.session_state.engine
 st.markdown('<div class="eyebrow">LISTEN EARLY · KEEP CONTEXT · SHOW THE EVIDENCE</div>', unsafe_allow_html=True)
@@ -196,5 +196,5 @@ with about_tab:
 ### Current limits
 The controller and decomposition are English rules, and retrieval is lexical BM25 with a small synonym map. Implicit constraints, complex negation and unfamiliar paraphrases may fail. Excerpts prove source provenance, not that every retrieved passage answers the question. This is an engineering prototype; official hackathon gates have not been measured.
 
-The hosted BBC page uses Groq speech recognition and generation with BM25 retrieval and session-only transcripts. Its displayed model is selected from the models available to the configured account. The original MiniLM/Chroma experiment is retained in the repository.
+The hosted live-audio page uses browser recording or uploaded audio, Groq Whisper transcription, BM25 retrieval, Groq answer generation, and session-only transcripts. Direct BBC server capture is retained only as an experimental fallback because some cloud regions block BBC media CDNs.
 ''')

@@ -72,9 +72,11 @@ python scripts/evaluate.py
 
 UI tests require Streamlit and are skipped without it. The nine-case authored development evaluation passes **6/9 exact source-set checks**. Three paraphrase challenges expose lexical limitations. This is not an official or held-out accuracy score. See [evaluation](docs/evaluation.md) and [results](docs/development-results.json) for the baseline and two ablations.
 
-## Hosted live-news mode
+## Hosted live-audio/news mode
 
-The sidebar BBC page runs on the Python service with bundled FFmpeg, Groq Whisper transcription, BM25 retrieval, and Groq answer generation. Add `GROQ_API_KEY` in Render Environment settings or Streamlit secrets and redeploy. Use **Check connection**, then **Check BBC source** before capturing a clip. The capture path resolves BBC's metadata playlist and tries several current World Service HLS/MP3 fallbacks; `BBC_STREAM_URL` can override the source if a hosting region is blocked. Uploaded audio and pasted transcripts remain available even when BBC's CDN rejects server-side capture. Transcripts are session-scoped (last 100) and exportable. No background recording is performed by this hosted page. The answer model is shown in the UI; it prefers Llama when the account lists it and otherwise selects GPT-OSS 20B. `GROQ_CHAT_MODEL` can override that choice.
+The sidebar live-audio page uses the reliable hosted path: **browser recording or audio upload → Groq Whisper → BM25 retrieval → Groq sourced answer generation**. Add `GROQ_API_KEY` in Render Environment settings or Streamlit secrets and redeploy. The page also accepts pasted transcripts, keeps the latest 100 transcript documents in the browser session, and supports export.
+
+Direct BBC World Service server capture is retained under an **Experimental** expander only. Some cloud regions cannot read BBC's media CDN even when the public browser stream works, so this path is not required for the demo. `BBC_STREAM_URL` can override the source for testing. The answer model is shown in the UI; it prefers Llama when available and otherwise selects GPT-OSS 20B. `GROQ_CHAT_MODEL` can override that choice.
 
 ## Original local BBC live-news mode
 
