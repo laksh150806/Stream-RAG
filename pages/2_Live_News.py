@@ -1,180 +1,256 @@
 import json
-
 import streamlit as st
 
-from hosted_news import answer, capture_audio, connection_check, key_configured, make_document, safe_error, transcribe
+from hosted_news import (
+    add_transcript_to_db,
+    answer_db,
+    capture_audio,
+    clear_db,
+    connection_check,
+    get_db_stats,
+    get_recent_chunks,
+    key_configured,
+    safe_error,
+    transcribe,
+)
 
 st.set_page_config(page_title='Live Audio · Stream-RAG', page_icon='🎙️', layout='wide')
-st.title('🎙️ Live Audio & News Intelligence')
-st.caption('Record or upload speech. Transcribe it with Whisper. Ask grounded questions from the transcript.')
-st.info(
-    'Stable hosted path: browser recording or uploaded audio → Groq Whisper → BM25 retrieval → sourced answer. '
-    'Direct BBC server capture is kept only as an experimental option because some cloud regions block BBC media CDNs.'
-)
-st.caption(
-    'Audio and retrieved excerpts are sent to Groq. '
-    'Transcripts stay in this browser session; export them to keep a copy.'
-)
 
-if 'news_docs' not in st.session_state:
-    st.session_state.news_docs = []
+st.title('🎙️ BBC World Service Live Stream RAG')
+st.caption('Real-time Retrieval-Augmented Generation (RAG) on live broadcast radio.')
+
+st.info(
+    '📻 **Stream URL:** `http://stream.live.vc.bbcmedia.co.uk/bbc_world_service` (Public internet radio stream)\n\n'
+)
 
 if not key_configured():
-    st.error('GROQ_API_KEY is missing. Add it in Render → Environment or Streamlit secrets, then redeploy.')
+    st.error('GROQ_API_KEY is missing. Add it in Render → Environment or Streamlit secrets (.streamlit/secrets.toml), then reload.')
     st.stop()
 
-st.success('Groq key is configured.')
-
-if st.button('Check AI connection', key='news_check'):
+if 'news_connection' not in st.session_state:
     try:
         st.session_state.news_connection = connection_check()
-        st.success('Groq authentication passed.')
     except Exception as exc:
         st.error(safe_error(exc))
 
 if 'news_connection' in st.session_state:
     config = st.session_state.news_connection
-    st.caption(
-        'Answer model: '
-        + config['chat_model']
-        + ' · Speech: '
-        + config.get('speech_model', 'whisper-large-v3-turbo')
+    
+
+query_tab, capture_tab, db_tab = st.tabs(['🔍 Query', '📡 Manual Capture', '📊 Database'])
+
+# -----------------------------------------------------------------------------
+# TAB 1: 🔍 Query Tab
+# -----------------------------------------------------------------------------
+with query_tab:
+    st.subheader('🔍 Ask Questions about Live Radio Broadcast')
+    st.caption('Ask any natural language question about what was discussed on the BBC World Service stream.')
+
+    question = st.text_input(
+        'Natural Language Question',
+        placeholder='What were the main news topics discussed on the radio?',
+        max_chars=2000,
+        key='query_input',
     )
 
+    col1, col2 = st.columns([1, 1])
 
-def add_transcript(text, source):
-    st.session_state.news_docs.append(make_document(text, source))
-    st.session_state.news_docs = st.session_state.news_docs[-100:]
-    st.session_state.pop('news_answer', None)
-
-
-capture_tab, ask_tab, evidence_tab = st.tabs(['Transcribe audio', 'Ask questions', 'Transcripts'])
-
-with capture_tab:
-    st.subheader('1. Add speech')
-    record_col, upload_col = st.columns(2)
-
-    with record_col:
-        st.markdown('**Record in the browser**')
-        recorded = st.audio_input('Record a short voice or news clip', key='news_recording')
-        if st.button('Transcribe recording', disabled=recorded is None, type='primary'):
-            try:
-                with st.spinner('Transcribing recording…'):
-                    text = transcribe(recorded.getvalue(), 'browser-recording.wav')
-                    add_transcript(text, 'Browser recording')
-                st.success('Transcript added.')
-                st.write(text)
-            except Exception as exc:
-                st.error(safe_error(exc))
-
-    with upload_col:
-        st.markdown('**Upload an audio file**')
-        upload = st.file_uploader(
-            'Maximum 20 MB',
-            type=['wav', 'mp3', 'm4a', 'ogg', 'flac', 'webm'],
-            key='news_upload',
+    with col1:
+        time_window = st.selectbox(
+            'Time Window Filter',
+            ['Last 10 min', 'Last 30 min', 'Last 60 min', 'All Time'],
+            index=3,
+            key='time_window_select',
         )
-        if st.button('Transcribe uploaded audio', disabled=upload is None):
-            try:
-                with st.spinner('Transcribing upload…'):
-                    text = transcribe(upload.getvalue(), upload.name)
-                    add_transcript(text, 'Uploaded audio')
-                st.success('Transcript added.')
-                st.write(text)
-            except Exception as exc:
-                st.error(safe_error(exc))
 
-    with st.expander('Add a pasted transcript instead'):
-        pasted = st.text_area('Transcript', max_chars=100000)
-        if st.button('Add transcript', disabled=not pasted.strip()):
-            add_transcript(pasted, 'User-provided transcript')
-            st.success('Transcript added.')
-
-    st.divider()
-    with st.expander('🧪 Experimental: capture BBC World Service from the server'):
-        st.warning(
-            'Optional experiment only. BBC media CDNs can reject or block cloud-hosted servers. '
-            'Use browser recording or upload for the reliable demo path.'
+    with col2:
+        st.write(' ')
+        st.write(' ')
+        enable_reranking = st.toggle(
+            'Toggle Reranking',
+            value=True,
+            help='Rerank ChromaDB vector results using BM25 hybrid lexical scoring for improved accuracy',
+            key='rerank_toggle',
         )
-        duration = st.selectbox('BBC clip duration', [20, 30, 60], key='bbc_duration')
 
-        check_col, capture_col = st.columns(2)
-        with check_col:
-            if st.button('Test BBC source', key='news_source_check'):
-                try:
-                    with st.spinner('Testing BBC source…'):
-                        sample = capture_audio(5)
-                    st.success(f'BBC source reachable ({max(1, len(sample) // 1024)} KB captured).')
-                except Exception as exc:
-                    st.warning(safe_error(exc))
-
-        with capture_col:
-            if st.button('Capture + transcribe BBC', key='news_capture'):
-                try:
-                    with st.spinner('Capturing and transcribing…'):
-                        audio = capture_audio(duration)
-                        text = transcribe(audio)
-                        add_transcript(text, 'BBC World Service')
-                    st.success('Transcript added.')
-                    st.write(text)
-                except Exception as exc:
-                    st.warning(safe_error(exc))
-
-with ask_tab:
-    st.subheader('2. Ask from the transcript evidence')
-    if not st.session_state.news_docs:
-        st.info('Record, upload, or paste a transcript first.')
-
-    question = st.text_input('Question', placeholder='What were the main topics?', max_chars=2000)
-    window = st.selectbox(
-        'Received within',
-        ['This session', 'Last 10 minutes', 'Last 30 minutes', 'Last 60 minutes'],
-    )
-    if st.button('Generate sourced answer', key='news_ask', disabled=not question.strip()):
+    if st.button('🔍 Search & Generate Answer', type='primary', disabled=not question.strip(), key='btn_query'):
         try:
-            with st.spinner('Searching transcript evidence…'):
+            with st.spinner('Querying ChromaDB vector index & generating grounded answer…'):
                 config = st.session_state.get('news_connection') or connection_check()
                 st.session_state.news_connection = config
-                minutes = {
-                    'This session': None,
-                    'Last 10 minutes': 10,
-                    'Last 30 minutes': 30,
-                    'Last 60 minutes': 60,
-                }[window]
-                st.session_state.news_answer = answer(
-                    question,
-                    st.session_state.news_docs,
-                    config['chat_model'],
-                    minutes,
+
+                minutes_map = {
+                    'Last 10 min': 10,
+                    'Last 30 min': 30,
+                    'Last 60 min': 60,
+                    'All Time': None,
+                }
+                minutes = minutes_map[time_window]
+
+                result = answer_db(
+                    question=question,
+                    model=config['chat_model'],
+                    minutes=minutes,
+                    rerank=enable_reranking,
                 )
+                st.session_state.news_query_result = result
         except Exception as exc:
             st.error(safe_error(exc))
 
-    if 'news_answer' in st.session_state:
-        result = st.session_state.news_answer
-        st.markdown('### Answer')
+    if 'news_query_result' in st.session_state:
+        result = st.session_state.news_query_result
+        st.divider()
+        st.markdown('### 💡 Answer')
         st.write(result['answer'])
-        st.caption('Model: ' + result['model'] + '. Verify claims against the source excerpts below.')
-        for source in result['sources']:
-            with st.expander(source['id'] + ' · ' + source['title']):
-                st.write(source['text'])
 
-with evidence_tab:
-    st.metric('Session transcripts', len(st.session_state.news_docs))
-    st.download_button(
-        'Export transcripts',
-        json.dumps(st.session_state.news_docs, indent=2),
-        'news-transcripts.json',
-        'application/json',
-    )
-    if st.button('Clear session transcripts'):
-        st.session_state.news_docs = []
-        st.session_state.pop('news_answer', None)
-        st.rerun()
+        rerank_status = 'Enabled (Hybrid Vector + BM25)' if result.get('rerank') else 'Disabled (Vector Distance)'
+        st.caption(f"**Model:** {result['model']} | **Reranking:** {rerank_status} | **Window:** {time_window}")
 
-    if not st.session_state.news_docs:
-        st.info('No transcripts in this session yet.')
+        st.markdown('#### 📚 Source Citations')
+        if not result['sources']:
+            st.info('No matching transcript citations returned for this query.')
+        else:
+            for idx, source in enumerate(result['sources'], 1):
+                score_label = f"Rerank Score: {source.get('rerank_score')}" if 'rerank_score' in source else f"Vector Score: {source.get('vector_score')}"
+                with st.expander(f"[{source['id']}] {source['title']} — {score_label}"):
+                    st.write(source['text'])
+                    st.caption(f"**Chunk ID:** `{source['id']}` | **Word Count:** {source['metadata'].get('word_count', 0)}")
 
-    for doc in reversed(st.session_state.news_docs):
-        with st.expander(doc['title']):
+# -----------------------------------------------------------------------------
+# TAB 2: 📡 Manual Capture Tab
+# -----------------------------------------------------------------------------
+with capture_tab:
+    st.subheader('📡 Manual BBC Audio Capture & Real-Time Transcription')
+    st.caption('Manually trigger audio capture from the BBC World Service stream without running a background loop.')
+
+    cap_col1, cap_col2 = st.columns([1, 1])
+
+    with cap_col1:
+        num_chunks = st.selectbox(
+            'Number of chunks to capture at once',
+            [1, 2, 3, 4, 5],
+            index=0,
+            help='Capture 1–5 consecutive audio chunks from the live BBC stream',
+            key='manual_num_chunks',
+        )
+
+    with cap_col2:
+        chunk_seconds = st.select_slider(
+            'Chunk Duration (seconds)',
+            options=[10, 15, 20, 30],
+            value=20,
+            key='manual_chunk_duration',
+        )
+
+    if st.button('🎙️ Capture & Transcribe BBC Stream', type='primary', key='btn_manual_capture'):
+        captured_docs = []
+        progress_bar = st.progress(0.0)
+
+        for i in range(1, num_chunks + 1):
+            with st.spinner(f'Capturing chunk {i}/{num_chunks} ({chunk_seconds}s) from BBC stream…'):
+                try:
+                    audio_bytes = capture_audio(chunk_seconds)
+                    with st.spinner(f'Transcribing chunk {i}/{num_chunks} with Groq Whisper…'):
+                        text = transcribe(audio_bytes)
+                        doc = add_transcript_to_db(text, source='BBC World Service (Manual)')
+                        captured_docs.append(doc)
+                        st.success(f'✅ Chunk {i}/{num_chunks} transcribed & saved to ChromaDB!')
+                        st.info(f"**ID:** `{doc['id']}` | **Words:** {doc['metadata']['word_count']} | **Timestamp:** {doc['metadata']['timestamp']}")
+                        st.write(doc['text'])
+                except Exception as exc:
+                    st.error(f'Chunk {i}/{num_chunks} failed: {safe_error(exc)}')
+
+            progress_bar.progress(float(i) / float(num_chunks))
+
+        if captured_docs:
+            st.toast(f'Successfully captured and indexed {len(captured_docs)} chunk(s) in ChromaDB!')
+
+    st.divider()
+    with st.expander('🎙️ Alternative Audio Input Methods (Browser Recording, Upload, Paste)'):
+        rec_col, up_col = st.columns(2)
+
+        with rec_col:
+            st.markdown('**Browser Voice Recording**')
+            recorded = st.audio_input('Record microphone audio', key='manual_rec')
+            if st.button('Transcribe & Store Recording', disabled=recorded is None, key='btn_transcribe_rec'):
+                try:
+                    with st.spinner('Transcribing browser recording…'):
+                        text = transcribe(recorded.getvalue(), 'browser-rec.wav')
+                        doc = add_transcript_to_db(text, source='Browser Recording')
+                    st.success('Recording saved to ChromaDB.')
+                    st.write(text)
+                except Exception as exc:
+                    st.error(safe_error(exc))
+
+        with up_col:
+            st.markdown('**Upload Audio File**')
+            upload = st.file_uploader('Audio file (WAV, MP3, M4A, FLAC)', type=['wav', 'mp3', 'm4a', 'ogg', 'flac', 'webm'], key='manual_file')
+            if st.button('Transcribe & Store Upload', disabled=upload is None, key='btn_transcribe_up'):
+                try:
+                    with st.spinner('Transcribing uploaded audio file…'):
+                        text = transcribe(upload.getvalue(), upload.name)
+                        doc = add_transcript_to_db(text, source='Uploaded Audio')
+                    st.success('Uploaded transcript saved to ChromaDB.')
+                    st.write(text)
+                except Exception as exc:
+                    st.error(safe_error(exc))
+
+        st.markdown('---')
+        pasted = st.text_area('Paste Raw Transcript Text', max_chars=100000, key='manual_pasted')
+        if st.button('Store Pasted Transcript', disabled=not pasted.strip(), key='btn_store_pasted'):
+            doc = add_transcript_to_db(pasted, source='Pasted Transcript')
+            st.success('Pasted transcript saved to ChromaDB.')
             st.write(doc['text'])
+
+# -----------------------------------------------------------------------------
+# TAB 3: 📊 Database Tab
+# -----------------------------------------------------------------------------
+with db_tab:
+    st.subheader('📊 ChromaDB Vector Storage Status')
+
+    stats = get_db_stats()
+
+    m1, m2 = st.columns(2)
+    with m1:
+        st.metric('Total Transcripts Indexed', stats['total_chunks'])
+    with m2:
+        st.metric('Total Words Indexed', stats['total_words'])
+
+    st.divider()
+    st.markdown('### 🕒 10 Most Recent Transcript Chunks')
+
+    recent_chunks = get_recent_chunks(limit=10)
+
+    if not recent_chunks:
+        st.info('No transcript chunks in ChromaDB database yet. Capture or transcribe audio to index items.')
+    else:
+        for idx, chunk in enumerate(recent_chunks, 1):
+            meta = chunk['metadata']
+            with st.expander(f"#{idx} [{chunk['id']}] {meta.get('source', 'Radio')} · {meta.get('timestamp', '')} ({meta.get('word_count', 0)} words)"):
+                st.write(chunk['text'])
+                st.caption(f"**Chunk ID:** `{chunk['id']}` | **Unix Timestamp:** `{meta.get('unix_time', 0)}`")
+
+    st.divider()
+    st.markdown('### ⚙️ Database Actions')
+    btn_c1, btn_c2, btn_c3 = st.columns(3)
+
+    with btn_c1:
+        if st.button('🔄 Refresh Database Stats', key='btn_db_refresh'):
+            st.rerun()
+
+    with btn_c2:
+        all_chunks = get_recent_chunks(limit=1000)
+        export_json = json.dumps(all_chunks, indent=2)
+        st.download_button(
+            '📥 Export Database Transcripts (JSON)',
+            export_json,
+            'chromadb_transcripts.json',
+            'application/json',
+            key='btn_db_export',
+        )
+
+    with btn_c3:
+        if st.button('🗑️ Clear / Reset ChromaDB Database', type='secondary', key='btn_db_clear'):
+            clear_db()
+            st.warning('ChromaDB persistent database reset successfully.')
+            st.rerun()
