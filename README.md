@@ -38,7 +38,7 @@ Versioned Answer + Telemetry
 Late correction → selectively refresh affected intents only
 ```
 
-The core workspace is deterministic and corpus-only: it does not need an API key or model download. A separate hosted live-audio page demonstrates browser recording/upload → Groq Whisper → transcript retrieval → sourced generation.
+The core workspace is deterministic and corpus-only: it does not need an API key or model download. It accepts pasted evidence plus PDF, DOCX, TXT, Markdown, and structured JSON uploads. A separate hosted live-audio page demonstrates browser recording/upload → Groq Whisper → persistent ChromaDB transcript retrieval with lexical reranking → sourced Groq generation.
 
 ## ✨ Core capabilities
 
@@ -52,7 +52,7 @@ The core workspace is deterministic and corpus-only: it does not need an API key
 - **Citation guard** — source IDs and quotes are mechanically validated before output.
 - **Session-only state** — conversational state stays inside the active session.
 - **Observability** — the UI exposes controller state, answer version, search count, active intents, early-retrieval lead, intent scopes, a live decision timeline, and the full event trace.
-- **Exportable telemetry** — session events and answer versions can be downloaded as JSON.
+- **Bring-your-own evidence** — upload PDF, DOCX, TXT, Markdown, or JSON; long text is converted into overlapping retrieval-sized evidence sections.\n- **Visible indexing status** — the workspace reports indexed evidence sections and searchable chunks immediately after ingestion.\n- **Exportable telemetry** — session events and answer versions can be downloaded as JSON.
 
 ## 🚀 90-second judge demo
 
@@ -161,7 +161,7 @@ The default workspace uses:
 
 It is deliberately inspectable. It is **not** presented as a dense semantic retriever or as a generative chatbot.
 
-Upload format:
+The sidebar can ingest **PDF, DOCX, TXT, Markdown, or JSON** directly. Text-bearing documents are converted into overlapping retrieval-sized evidence sections; scanned/image-only PDFs require OCR first. Structured JSON can use the format below:
 
 ```json
 {
@@ -213,12 +213,14 @@ Browser recording or audio upload
         ↓
 Groq Whisper transcription
         ↓
-BM25 transcript retrieval
+Persistent ChromaDB transcript store
+        ↓
+Vector retrieval + optional BM25 reciprocal-rank reranking
         ↓
 Groq sourced answer generation
 ```
 
-It also accepts pasted transcripts, keeps the latest 100 transcript documents in the active browser session, and supports export.
+It also accepts pasted transcripts, stores timestamped transcript chunks in the ChromaDB collection, supports recency filtering and recent-chunk inspection, and keeps generation grounded in the retrieved transcript evidence.
 
 Set `GROQ_API_KEY` through Render Environment settings or Streamlit secrets. Do **not** commit secrets to the repository.
 
