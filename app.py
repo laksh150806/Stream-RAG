@@ -309,7 +309,26 @@ def draw_answer():
     else:
         for item in snapshot['claims']:
             with st.container(border=True):
-                display_query = re.sub(r'\\b(?:in|at|for|with|of|to)\\s*
+                display_query = item['query'].replace('*', '').strip()
+                trailing_words = (' in', ' at', ' for', ' with', ' of', ' to')
+                lowered_query = display_query.casefold()
+                for suffix in trailing_words:
+                    if lowered_query.endswith(suffix):
+                        display_query = display_query[:-len(suffix)].rstrip()
+                        break
+                evidence_meta = [
+                    engine.retriever.by_id[e['source_id']].metadata
+                    for e in item['evidence']
+                    if e['source_id'] in engine.retriever.by_id
+                ]
+                display_scope = {
+                    k: v for k, v in item.get('scope', {}).items()
+                    if any(k in metadata for metadata in evidence_meta)
+                }
+                scope_suffix = ' · ' + ' · '.join(str(v) for v in display_scope.values()) if display_scope else ''
+                st.markdown('**' + display_query + scope_suffix + '**')
+                if display_scope:
+                    st.caption('Intent scope: ' + ' · '.join(f'{k}: {v}' for k, v in display_scope.items()))
                 if item['uncertainty']:
                     st.warning('No confident supporting evidence found. ' + item['uncertainty'])
                     continue
