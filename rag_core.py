@@ -152,9 +152,12 @@ class Retriever:
             overlap = q & terms.keys()
             if not overlap:
                 continue
-            # Reject a lone generic overlap (for example only "policy") on a longer query.
-            # Two matching concepts remain enough for paraphrases with extra conversational words.
-            if len(q) >= 3 and len(overlap) == 1:
+            # Reject a lone generic overlap on a longer query unless it is the
+            # document's declared topic. Topic aliases such as "called off" ->
+            # cancellation remain valid, while an unrelated query matching only
+            # the generic word "policy" is not presented as evidence.
+            topic_terms = set(tokens(str(chunk.metadata.get('topic', ''))))
+            if len(q) >= 3 and len(overlap) == 1 and not (overlap & topic_terms):
                 continue
             score = 0.0
             length = sum(terms.values())
