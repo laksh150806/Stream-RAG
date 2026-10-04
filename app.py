@@ -309,10 +309,19 @@ def draw_answer():
                 if item.get('scope'):
                     st.caption('Intent scope: ' + ' · '.join(f'{k}: {v}' for k, v in item['scope'].items()))
                 if item['uncertainty']:
-                    st.warning(item['uncertainty'])
-                for evidence in item['evidence']:
-                    st.write(evidence['quote'])
-                    st.caption(f"[{evidence['source_id']}] · {evidence['title']}")
+                    st.warning('No confident supporting evidence found. ' + item['uncertainty'])
+                    continue
+                evidence_rows = item['evidence']
+                if evidence_rows:
+                    best = evidence_rows[0]
+                    st.markdown('<div class="answer-label">BEST RETRIEVED EVIDENCE</div>', unsafe_allow_html=True)
+                    st.write(best['quote'])
+                    st.caption(f"[{best['source_id']}] · {best['title']}")
+                    if len(evidence_rows) > 1:
+                        with st.expander(f'Additional supporting evidence ({len(evidence_rows) - 1})'):
+                            for evidence in evidence_rows[1:]:
+                                st.write(evidence['quote'])
+                                st.caption(f"[{evidence['source_id']}] · {evidence['title']}")
 
 
 with session_tab:
@@ -366,8 +375,8 @@ with session_tab:
             draw_answer()
 
     st.divider()
-    st.markdown('**Grounded AI answer (optional)**')
-    st.caption('Groq receives only the evidence selected above by Stream-RAG; the full corpus is never sent to generation.')
+    st.markdown('**Grounded answer**')
+    st.caption('Turn the retrieved evidence above into a concise answer. Groq receives only selected evidence, never the full corpus.')
     ai_ready = bool(engine.snapshot()['claims']) and key_configured()
     if not key_configured():
         st.caption('Unavailable until GROQ_API_KEY is configured. Deterministic evidence mode remains fully functional.')
@@ -380,9 +389,11 @@ with session_tab:
         except Exception as exc:
             st.error(f'Grounded generation failed: {exc}')
     if st.session_state.get('grounded_answer'):
-        st.markdown(st.session_state.grounded_answer)
-        if st.session_state.get('grounded_citations'):
-            st.caption('Verified retrieved citations: ' + ', '.join(f'[{x}]' for x in st.session_state.grounded_citations))
+        with st.container(border=True):
+            st.markdown('<div class="answer-label">GROUNDED RESPONSE</div>', unsafe_allow_html=True)
+            st.markdown(st.session_state.grounded_answer)
+            if st.session_state.get('grounded_citations'):
+                st.caption('Verified citations · ' + ' · '.join(f'[{x}]' for x in st.session_state.grounded_citations))
 
     timeline = decision_timeline()
     if timeline:
