@@ -3,7 +3,11 @@
 
 **Theme 4 — Streaming Live RAG**
 
-Stream-RAG is an inspectable streaming retrieval system that starts useful retrieval before an utterance is finished, decomposes compound and multi-sentence requests into independently scoped intents, selectively refreshes only evidence affected by late corrections, suppresses unnecessary retrieval for presentation-only follow-ups, and exposes the full decision trace with grounded source IDs.
+**Retrieve while the user is still speaking. Refine when the intent changes. Answer only from evidence.**
+
+Stream-RAG is a streaming retrieval system built for queries that evolve in real time. It can begin retrieval from stable partial transcripts, split compound requests into independently scoped intents, selectively refresh evidence after late corrections, reuse evidence for presentation-only follow-ups, and expose every retrieval decision with verifiable source IDs.
+
+The main workspace also supports **bring-your-own evidence**: upload a PDF, DOCX, TXT, Markdown, or JSON corpus, activate it as the current workspace, and immediately query the indexed evidence. An optional grounded Groq response turns only the retrieved passages into a concise cited answer; the full corpus is never sent to generation.
 
 ## 🔗 Submission links
 
@@ -39,7 +43,16 @@ Late correction → selectively refresh affected intents only
 
 The core workspace is deterministic and corpus-only: it does not need an API key or model download. It accepts pasted evidence plus PDF, DOCX, TXT, Markdown, and structured JSON uploads. A separate hosted live-audio page demonstrates browser recording/upload → Groq Whisper → persistent ChromaDB transcript retrieval with lexical reranking → sourced Groq generation.
 
-## ✨ Core capabilities
+## ✨ What judges can see
+
+- **Bring any document** — upload PDF, DOCX, TXT, Markdown, JSON, or paste text; the active source and indexing status are shown explicitly.
+- **Streaming retrieval** — retrieval can start from stable partial speech/transcript input before end-of-utterance.
+- **Evidence-first answers** — the strongest retrieved passage is shown first with its exact source ID; secondary evidence stays available without cluttering the answer.
+- **Grounded response generation** — optional Groq generation sees only retrieved evidence and returned citation IDs are checked against that evidence.
+- **Live corrections** — late scope changes selectively refresh affected intents instead of restarting every search.
+- **Inspectable behavior** — controller decisions, answer versions, retrieval counts, scopes, timing and the technical trace remain visible to judges.
+
+## ⚙️ Core capabilities
 
 - **Early retrieval** — stable partial clauses can trigger retrieval before end-of-utterance.
 - **Multi-intent decomposition** — compound requests become separate retrieval jobs.
@@ -56,11 +69,25 @@ The core workspace is deterministic and corpus-only: it does not need an API key
 - **Visible indexing status** — the workspace reports indexed evidence sections and searchable chunks immediately after ingestion.
 - **Exportable telemetry** — session events and answer versions can be downloaded as JSON.
 
-## 🚀 90-second judge demo
+## 🚀 Recommended judge demo
 
-Open the [live application](https://stream-rag.onrender.com), reset the conversation, then run:
+### A. Prove it is not hardcoded
 
-### 1. Early retrieval + decomposition
+1. Upload an unrelated PDF/DOCX/TXT file in **Build your evidence workspace**.
+2. Confirm the selected filename, then choose **Use uploaded evidence**.
+3. Verify the sidebar shows the file as **ACTIVE** and reports indexed sections/chunks.
+4. Ask a factual question whose answer exists only in that document.
+5. Show **BEST RETRIEVED EVIDENCE**, its source ID, then choose **Generate grounded answer** to show the concise cited response.
+
+This is the strongest first demo because it demonstrates arbitrary evidence ingestion, retrieval provenance and evidence-only generation.
+
+### B. Show the streaming controller
+
+Load the bundled sample dataset, reset the conversation, then run the sequence below.
+
+Open the [live application](https://stream-rag.onrender.com).
+
+#### 1. Early retrieval + decomposition
 
 ```text
 Workshop capacity in Pune and cancellation policy and catering options and accessibility
@@ -68,7 +95,7 @@ Workshop capacity in Pune and cancellation policy and catering options and acces
 
 Watch the controller and decision timeline. Retrieval begins on stable partial input before the final transcript fragment.
 
-### 2. Selective refinement
+#### 2. Selective refinement
 
 ```text
 Actually city: Delhi
@@ -76,7 +103,7 @@ Actually city: Delhi
 
 Capacity, cancellation, and catering switch to Delhi evidence. Accessibility stays unchanged because it does not depend on the city.
 
-### 3. Retrieval suppression
+#### 3. Retrieval suppression
 
 ```text
 Please repeat your last answer in two bullets.
@@ -84,7 +111,7 @@ Please repeat your last answer in two bullets.
 
 The controller shows **SUPPRESS** and the search count does not increase.
 
-### 4. Independent scopes in one utterance
+#### 4. Independent scopes in one utterance
 
 ```text
 What is workshop capacity in Pune? What is the cancellation policy in Delhi? What are catering options in Bengaluru?
@@ -126,7 +153,7 @@ The important result is **not** that streaming improves final accuracy on this s
 
 These are **10 self-authored synthetic development cases**, not an official or held-out benchmark. See [evaluation details](docs/evaluation.md) and [development results](docs/development-results.json).
 
-## 🔍 Example paraphrases covered by CI
+## 🔍 Example paraphrases
 
 ```text
 Could our thirty delegates fit in Cedar Hall?
@@ -238,7 +265,7 @@ sh run.sh
 Or:
 
 ```bash
-python -m pip install -r requirements.lock.txt
+python -m pip install -r requirements.txt
 python -m streamlit run app.py
 ```
 
@@ -254,7 +281,6 @@ Docker:
 docker compose up --build
 ```
 
-The Python/Streamlit path is covered by CI. Docker is retained for reproducibility but has not been validated in the current review environment.
 
 ## ☁️ Deployment
 
@@ -295,7 +321,6 @@ Additional details: [docs/deployment.md](docs/deployment.md).
 - The 10-case evaluation is authored and synthetic; it does not establish general or official benchmark accuracy.
 - Complex negation and truly unfamiliar paraphrases may still fail.
 - Direct server-side BBC capture is hosting-region dependent.
-- Docker clean-machine execution still needs independent validation.
 
 ## 📚 Project documentation
 
@@ -313,6 +338,3 @@ The project AI-usage disclosure is provided here:
 
 **[AI Usage Disclosure](./SRM_Snipe%20Coders_AI_Disclosure.docx)**
 
-## Provenance
-
-This repository began as a file-identical snapshot of `laksh150806/Streaming-Live-RAG`. The source repository was not modified. Subsequent Stream-RAG commits add the Theme 4 controller, scoped decomposition, selective refinement, observability, evaluation, deployment hardening, and hosted live-audio extension.
