@@ -150,5 +150,20 @@ class CoreTests(unittest.TestCase):
         self.assertTrue(all(c.text in text for c in chunks))
 
 
+    def test_unrelated_custom_corpus_is_not_sample_hardcoded(self):
+        payload = {
+            'documents': [
+                {'id': 'robot-payload', 'title': 'XR-7 payload', 'text': 'XR-7 inspection drone supports a maximum payload of 2.4 kilograms.', 'metadata': {'topic': 'payload'}},
+                {'id': 'robot-maintenance', 'title': 'XR-7 maintenance', 'text': 'Preventive maintenance is required every 120 flight hours.', 'metadata': {'topic': 'maintenance'}},
+            ]
+        }
+        session = StreamingSession(load_corpus(payload))
+        session.ingest('What is the XR-7 payload?', timestamp_s=0.0, final=True, turn_id='1')
+        snapshot = session.snapshot()
+        source_ids = [e['source_id'] for item in snapshot['claims'] for e in item['evidence']]
+        self.assertIn('robot-payload:s1', source_ids)
+        self.assertTrue(all('pune' not in source_id.lower() for source_id in source_ids))
+
+
 if __name__ == '__main__':
     unittest.main()
