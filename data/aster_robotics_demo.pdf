@@ -1,0 +1,84 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R 5 0 R 7 0 R] /Count 3 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 300 >>
+stream
+BT
+/F1 15 Tf
+72 720 Td
+(Aster Robotics Field Manual) Tj
+0 -34 Td
+(XR-7 inspection drone supports a maximum payload of 2.4 kilograms.) Tj
+0 -34 Td
+(Standard battery endurance is 38 minutes in calm conditions.) Tj
+0 -34 Td
+(Operators must complete the pre-flight checklist before every mission.) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 7 0 R >> >> /Contents 6 0 R >>
+endobj
+6 0 obj
+<< /Length 326 >>
+stream
+BT
+/F1 15 Tf
+72 720 Td
+(Aster Robotics Service Policy) Tj
+0 -34 Td
+(Preventive maintenance is required every 120 flight hours.) Tj
+0 -34 Td
+(Battery packs must be replaced after 500 charge cycles or if capacity falls below 80 percent.) Tj
+0 -34 Td
+(Warranty claims require the device serial number and maintenance log.) Tj
+ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 9 0 R >> >> /Contents 8 0 R >>
+endobj
+8 0 obj
+<< /Length 334 >>
+stream
+BT
+/F1 15 Tf
+72 720 Td
+(Aster Robotics Safety and Support) Tj
+0 -34 Td
+(XR-7 operation is prohibited in heavy rain and winds above 45 kilometers per hour.) Tj
+0 -34 Td
+(Emergency support is available 24 hours a day for grounded fleet incidents.) Tj
+0 -34 Td
+(Unsupported questions must not be answered from unrelated evidence.) Tj
+ET
+endstream
+endobj
+9 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 10
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000127 00000 n 
+0000000253 00000 n 
+0000000603 00000 n 
+0000000729 00000 n 
+0000001105 00000 n 
+0000001231 00000 n 
+0000001615 00000 n 
+trailer
+<< /Size 10 /Root 1 0 R >>
+startxref
+1685
+%%EOF
