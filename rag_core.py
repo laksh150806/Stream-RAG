@@ -152,6 +152,9 @@ class Retriever:
             overlap = q & terms.keys()
             if not overlap:
                 continue
+            # Require meaningful query coverage so one stray word cannot become evidence.
+            if len(q) >= 3 and len(overlap) / len(q) < 0.34:
+                continue
             score = 0.0
             length = sum(terms.values())
             for term in overlap:

@@ -81,7 +81,7 @@ class CoreTests(unittest.TestCase):
         self.assertTrue(self.s.snapshot()['claims'][0]['uncertainty'])
 
     def test_unknown_question_returns_uncertainty(self):
-        result = self.send('Quantum banana teleportation')
+        result = self.send('What is the quantum banana teleportation policy?')
         self.assertFalse(self.ids())
         self.assertTrue(result['claims'][0]['uncertainty'])
 
