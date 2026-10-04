@@ -41,7 +41,7 @@ Versioned Answer + Telemetry
 Late correction → selectively refresh affected intents only
 ```
 
-The core workspace is deterministic and corpus-only: it does not need an API key or model download. It accepts pasted evidence plus PDF, DOCX, TXT, Markdown, and structured JSON uploads. A separate hosted live-audio page demonstrates browser recording/upload → Groq Whisper → persistent ChromaDB transcript retrieval with lexical reranking → sourced Groq generation.
+The core workspace is deterministic and corpus-only: it does not need an API key or model download. It accepts pasted evidence plus PDF, DOCX, TXT, Markdown, and structured JSON uploads. A separate hosted live-audio page demonstrates browser recording/upload → Groq Whisper → a lightweight timestamped transcript store → lexical retrieval with BM25 reranking → sourced Groq generation.
 
 ## ✨ What judges can see
 
@@ -241,18 +241,18 @@ Browser recording or audio upload
         ↓
 Groq Whisper transcription
         ↓
-Persistent ChromaDB transcript store
+Lightweight timestamped JSON transcript store
         ↓
-Vector retrieval + optional BM25 reciprocal-rank reranking
+Lexical retrieval + BM25 reranking
         ↓
 Groq sourced answer generation
 ```
 
-It also accepts pasted transcripts, stores timestamped transcript chunks in the ChromaDB collection, supports recency filtering and recent-chunk inspection, and keeps generation grounded in the retrieved transcript evidence.
+It also accepts pasted transcripts, stores timestamped transcript records in the same lightweight hosted store, supports recency filtering and recent-transcript inspection, and keeps generation grounded in retrieved transcript evidence. The hosted store is intentionally lightweight for the constrained demo instance; it is not a durable external database and may be reset by a redeploy or instance replacement.
 
 Set `GROQ_API_KEY` through Render Environment settings or Streamlit secrets. Do **not** commit secrets to the repository.
 
-Direct BBC World Service server capture remains under an **Experimental** expander because some cloud-hosting regions cannot access BBC media CDN routes. It is not required for the main demo.
+Browser recording/upload is the primary hosted demo path. Direct BBC World Service server capture remains backend experimental/fallback functionality because some cloud-hosting regions cannot access BBC media CDN routes; it is not required for the main demo.
 
 ## 🛠️ Run locally
 
@@ -320,7 +320,8 @@ Additional details: [docs/deployment.md](docs/deployment.md).
 - English decomposition and scope handling are rule-based.
 - The 10-case evaluation is authored and synthetic; it does not establish general or official benchmark accuracy.
 - Complex negation and truly unfamiliar paraphrases may still fail.
-- Direct server-side BBC capture is hosting-region dependent.
+- Direct server-side BBC capture is hosting-region dependent; use browser recording/upload for the reliable hosted demo.
+- The hosted transcript JSON store is demo-oriented local instance storage, not durable external persistence across redeploys or instance replacement.
 
 ## 📚 Project documentation
 

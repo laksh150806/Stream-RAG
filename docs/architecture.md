@@ -2,7 +2,7 @@
 
 ## Separate modes
 
-`app.py` is the corpus-isolated workspace. `pages/2_Live_News.py` exposes the imported BBC experiment. The main workspace never ingests radio output automatically.
+`app.py` is the corpus-isolated streaming workspace. `pages/2_Live_News.py` is the hosted live-audio extension. The main workspace never ingests live-audio output automatically; the two surfaces remain explicitly separated.
 
 ## Event path
 
@@ -27,4 +27,4 @@ Numeric capacity comparisons, implicit unseen locations, complex negation and se
 
 ## News path
 
-FFmpeg → Groq Whisper → MiniLM → Chroma → Groq Llama. A worker owns its stop event and bounded queue and never accesses Streamlit. The UI drains messages and maintains a heartbeat. Persistent news data/external APIs are outside the Theme 4 evaluation path.
+Primary hosted flow: browser recording/upload → Groq Whisper → lightweight timestamped JSON transcript store → lexical candidate retrieval + BM25 reranking → evidence-grounded Groq answer generation. Direct BBC/FFmpeg capture is retained only as a backend experimental fallback because media-CDN access varies by hosting region. Hosted transcript storage is local demo-instance state rather than durable external persistence. External APIs remain outside the deterministic Theme 4 core evaluation path.

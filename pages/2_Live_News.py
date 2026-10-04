@@ -231,7 +231,7 @@ with db_tab:
             st.download_button(
                 '📥 Export Database Transcripts (JSON)',
                 export_json,
-                'chromadb_transcripts.json',
+                'stream_rag_transcripts.json',
                 'application/json',
                 key='btn_db_export',
             )
