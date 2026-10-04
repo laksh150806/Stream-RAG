@@ -1,6 +1,5 @@
 # Stream-RAG
 
-[![Quality gate](https://github.com/laksh150806/Stream-RAG/actions/workflows/quality.yml/badge.svg)](https://github.com/laksh150806/Stream-RAG/actions/workflows/quality.yml)
 
 **Theme 4 — Streaming Live RAG**
 
@@ -108,7 +107,6 @@ python -m unittest discover -s tests -v
 python scripts/evaluate.py
 ```
 
-The current GitHub Actions quality gate passes on Python 3.12.
 
 | Configuration | Exact final source-set checks |
 |---|---:|
@@ -289,7 +287,6 @@ Additional details: [docs/deployment.md](docs/deployment.md).
 | `docs/architecture.md` | Architecture notes |
 | `docs/telemetry.schema.json` | Telemetry/event schema |
 | `tests/` | Core, UI, hosted-news, and regression tests |
-| `.github/workflows/quality.yml` | Automated quality gate |
 
 ## ⚠️ Current limitations
 
@@ -299,7 +296,6 @@ Additional details: [docs/deployment.md](docs/deployment.md).
 - Complex negation and truly unfamiliar paraphrases may still fail.
 - Direct server-side BBC capture is hosting-region dependent.
 - Docker clean-machine execution still needs independent validation.
-- No hackathon gate is claimed as officially certified.
 
 ## 📚 Project documentation
 
