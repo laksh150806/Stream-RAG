@@ -1,5 +1,6 @@
 """Session-scoped hosted audio RAG. Never log credentials or upstream response bodies."""
 import os
+import json
 import re
 import hashlib
 import math
