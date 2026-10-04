@@ -27,14 +27,12 @@ if not key_configured():
     st.error('GROQ_API_KEY is missing. Add it in Render → Environment or Streamlit secrets (.streamlit/secrets.toml), then reload.')
     st.stop()
 
+# Avoid a blocking Groq model-list request every time a fresh Live News page opens.
+# The explicit button below performs the remote authentication/model check when needed.
 if 'news_connection' not in st.session_state:
-    try:
-        st.session_state.news_connection = connection_check()
-    except Exception as exc:
-        st.error(safe_error(exc))
+    st.session_state.news_connection = None
 
-if 'news_connection' in st.session_state:
-    config = st.session_state.news_connection
+config = st.session_state.news_connection
 
 # Keep an explicit, user-triggered authentication check. Besides making the
 # current model selection visible, this preserves the stable UI contract used
@@ -216,7 +214,7 @@ with capture_tab:
 # TAB 3: 📊 Database Tab
 # -----------------------------------------------------------------------------
 with db_tab:
-    st.subheader('📊 ChromaDB Vector Storage Status')
+    st.subheader('📊 ChromaDB Transcript Storage Status')
 
     stats = get_db_stats()
 

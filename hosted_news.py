@@ -11,7 +11,6 @@ from uuid import uuid4
 from datetime import datetime, timezone
 
 from groq import Groq
-import chromadb
 from rag_core import Retriever, load_corpus
 
 
@@ -63,6 +62,9 @@ DB_DIR = './streaming_rag'
 
 
 def get_chroma_collection():
+    # Chroma/ONNX are heavy; import only when the Live News database is actually used.
+    # This keeps normal app/page navigation lightweight on small hosted instances.
+    import chromadb
     os.makedirs(DB_DIR, exist_ok=True)
     client = chromadb.PersistentClient(path=DB_DIR)
     return client.get_or_create_collection(
@@ -257,6 +259,7 @@ def answer_db(question, model, minutes=None, rerank=True):
 
 
 def clear_db():
+    import chromadb
     os.makedirs(DB_DIR, exist_ok=True)
     client = chromadb.PersistentClient(path=DB_DIR)
     try:
