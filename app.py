@@ -5,6 +5,8 @@ import time
 from pathlib import Path
 
 import streamlit as st
+from docx import Document
+from pypdf import PdfReader
 
 from rag_core import StreamingSession, load_corpus, simulate_stream
 
@@ -29,6 +31,25 @@ def fresh_session(payload=None):
     st.session_state.engine = StreamingSession(load_corpus(payload))
     st.session_state.turn_number = 0
     st.session_state.last_transcript = ''
+
+
+def uploaded_text(upload):
+    """Extract text from a supported evidence file entirely in memory."""
+    name = upload.name.lower()
+    if name.endswith('.pdf'):
+        reader = PdfReader(upload)
+        pages = [(page.extract_text() or '').strip() for page in reader.pages]
+        text = '\n\n'.join(p for p in pages if p)
+        if not text:
+            raise ValueError('No extractable text was found in this PDF. Scanned/image-only PDFs need OCR first.')
+        return text
+    if name.endswith('.docx'):
+        document = Document(upload)
+        text = '\n\n'.join(p.text.strip() for p in document.paragraphs if p.text.strip())
+        if not text:
+            raise ValueError('No paragraph text was found in this DOCX.')
+        return text
+    return upload.getvalue().decode('utf-8')
 
 
 def text_payload(text, title='Pasted evidence'):
@@ -64,7 +85,7 @@ with st.sidebar:
     st.success('Local evidence mode · No API key needed')
     st.caption('Bring your own evidence or use the bundled sample. Answers are exact source excerpts retrieved from the active workspace.')
     st.markdown('**Build your evidence workspace**')
-    upload = st.file_uploader('Upload evidence', type=['txt', 'md', 'json'], help='TXT/Markdown can be uploaded directly. JSON uses the documented corpus format.')
+    upload = st.file_uploader('Upload evidence', type=['pdf', 'docx', 'txt', 'md', 'json'], help='PDF, DOCX, TXT and Markdown are converted automatically. JSON uses the documented corpus format.')
     pasted = st.text_area('Or paste evidence text', height=120, placeholder='Paste policies, notes, documentation, meeting notes, etc.', key='workspace_paste')
     build_paste = st.button('Build from pasted text', disabled=not pasted.strip(), width='stretch')
     load_upload = st.button('Build from uploaded file', disabled=upload is None, width='stretch')
@@ -81,7 +102,7 @@ with st.sidebar:
                 payload = json.loads(raw)
                 load_corpus(payload)
             else:
-                payload = text_payload(raw.decode('utf-8'), Path(upload.name).stem or 'Uploaded evidence')
+                payload = text_payload(uploaded_text(upload), Path(upload.name).stem or 'Uploaded evidence')
             fresh_session(payload)
             st.rerun()
         if sample:
