@@ -129,7 +129,7 @@ with query_tab:
 # -----------------------------------------------------------------------------
 with capture_tab:
     st.subheader('📡 Manual BBC Audio Capture & Real-Time Transcription')
-    st.caption('Manually trigger a bounded BBC World Service capture without running a background loop. If the broadcaster blocks this Render region, browser recording/upload/paste remain available.')
+    st.caption('Try direct BBC World Service capture first. If the broadcaster blocks this Render region, use the browser capture below to keep the same Whisper → ChromaDB → RAG pipeline working.')
 
     cap_col1, cap_col2 = st.columns([1, 1])
 
@@ -174,7 +174,26 @@ with capture_tab:
             st.toast(f'Successfully captured and indexed {len(captured_docs)} chunk(s) in ChromaDB!')
 
     st.divider()
-    with st.expander('🎙️ Alternative Audio Input Methods (Browser Recording, Upload, Paste)'):
+    st.markdown('### 🌐 Browser Capture — reliable hosted fallback')
+    st.caption(
+        'Use this when BBC blocks the Render server. On desktop, play BBC World Service in another tab/device '
+        'and record it here; on mobile, play the broadcast on another device or speaker. The recorded audio is '
+        'sent directly to Groq Whisper, indexed in ChromaDB, and becomes immediately queryable.'
+    )
+    browser_bbc = st.audio_input('Record BBC audio in your browser', key='bbc_browser_capture')
+    if st.button('🎙️ Transcribe & Index Browser BBC Audio', type='primary',
+                 disabled=browser_bbc is None, key='btn_bbc_browser_capture'):
+        try:
+            with st.spinner('Transcribing BBC audio with Groq Whisper…'):
+                text = transcribe(browser_bbc.getvalue(), 'bbc-browser.wav')
+                doc = add_transcript_to_db(text, source='BBC World Service (Browser Capture)')
+            st.success('✅ BBC audio transcribed and indexed in ChromaDB.')
+            st.info(f"**ID:** `{doc['id']}` | **Words:** {doc['metadata']['word_count']} | **Timestamp:** {doc['metadata']['timestamp']}")
+            st.write(doc['text'])
+        except Exception as exc:
+            st.error(safe_error(exc))
+
+    with st.expander('🎙️ Other Audio Input Methods (Recording, Upload, Paste)'):
         rec_col, up_col = st.columns(2)
 
         with rec_col:
