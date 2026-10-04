@@ -14,7 +14,8 @@ from hosted_news import client as groq_client, key_configured
 ROOT = Path(__file__).resolve().parent
 st.set_page_config(page_title='Stream-RAG · Live evidence', page_icon='◉', layout='wide')
 st.markdown('''<style>
-.block-container{max-width:1280px;padding-top:2rem} h1{letter-spacing:-.055em}
+.block-container{max-width:1280px;padding-top:1.5rem;padding-left:clamp(1rem,4vw,3rem);padding-right:clamp(1rem,4vw,3rem)}
+h1{letter-spacing:-.045em;font-size:clamp(2.25rem,6vw,4.4rem)!important;line-height:1.02!important}
 [data-testid="stMetric"]{background:rgba(34,211,238,.06);border:1px solid rgba(34,211,238,.18);border-radius:12px;padding:14px}
 .eyebrow{color:#22d3ee;font-size:12px;letter-spacing:2px;font-weight:700}
 .controller-card{border:1px solid rgba(148,163,184,.22);border-radius:14px;padding:14px 16px;margin:4px 0 14px;background:rgba(15,23,42,.28)}
@@ -23,6 +24,22 @@ st.markdown('''<style>
 .controller-state{font-size:18px;font-weight:800;letter-spacing:.04em}
 .controller-detail{font-size:13px;color:#cbd5e1}
 .state-retrieve{color:#22c55e}.state-wait{color:#f59e0b}.state-suppress{color:#38bdf8}.state-reuse{color:#a78bfa}.state-idle{color:#94a3b8}
+@media (max-width: 700px){
+  .block-container{padding-top:.75rem;padding-left:1rem;padding-right:1rem}
+  h1{font-size:2.55rem!important;line-height:1.05!important;margin-bottom:.65rem!important}
+  .eyebrow{font-size:10px;letter-spacing:1.25px;white-space:normal;line-height:1.5}
+  [data-testid="stCaptionContainer"]{font-size:.92rem}
+  [data-testid="stMetric"]{padding:9px}
+  [data-testid="stMetricValue"]{font-size:1.35rem}
+  .controller-card{padding:11px 12px}
+  .controller-state{font-size:16px}
+  .controller-detail{font-size:12px}
+  div[data-testid="stHorizontalBlock"]{gap:.55rem}
+  .stTabs [data-baseweb="tab-list"]{overflow-x:auto;scrollbar-width:none;gap:.15rem}
+  .stTabs [data-baseweb="tab"]{white-space:nowrap;padding-left:.7rem;padding-right:.7rem}
+  .stButton>button{min-height:3rem}
+  input{font-size:16px!important}
+}
 </style>''', unsafe_allow_html=True)
 
 
@@ -142,7 +159,7 @@ with st.sidebar:
     st.page_link('pages/2_Live_News.py', label='Live audio / news RAG', icon='🎙️')
 
 engine = st.session_state.engine
-st.markdown('<div class="eyebrow">LISTEN EARLY · KEEP CONTEXT · SHOW THE EVIDENCE</div>', unsafe_allow_html=True)
+st.markdown('<div class="eyebrow">STREAM EARLY · RETRIEVE · REFINE · CITE</div>', unsafe_allow_html=True)
 st.title('Answers that evolve with you.')
 st.caption('Bring your own evidence, ask naturally, and watch retrieval begin before the transcript ends. The bundled workshop data is only an optional sample.')
 session_tab, corpus_tab, trace_tab, eval_tab, about_tab = st.tabs(['Live session', 'Evidence library', 'Trace & export', 'Evaluation', 'How it works'])
