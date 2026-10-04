@@ -35,5 +35,15 @@ class UITests(unittest.TestCase):
 
 
 
+    def test_custom_evidence_activation_contract(self):
+        root = Path(__file__).resolve().parents[1]
+        source = (root / 'app.py').read_text(encoding='utf-8')
+        self.assertIn("Use uploaded evidence", source)
+        self.assertIn("fresh_session(payload)", source)
+        self.assertIn("ACTIVE: {active_name}", source)
+        self.assertNotIn("upload.name}:{upload.size}", source)
+
+
+
 if __name__=='__main__':
     unittest.main()
