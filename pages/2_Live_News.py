@@ -35,7 +35,17 @@ if 'news_connection' not in st.session_state:
 
 if 'news_connection' in st.session_state:
     config = st.session_state.news_connection
-    
+
+# Keep an explicit, user-triggered authentication check. Besides making the
+# current model selection visible, this preserves the stable UI contract used
+# by the hosted-page smoke test without ever displaying the API key.
+if st.button('Check Groq connection', key='news_check'):
+    try:
+        config = connection_check()
+        st.session_state.news_connection = config
+        st.success('Groq authentication passed.')
+    except Exception as exc:
+        st.error(safe_error(exc))
 
 query_tab, capture_tab, db_tab = st.tabs(['🔍 Query', '📡 Manual Capture', '📊 Database'])
 
