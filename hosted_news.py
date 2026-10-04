@@ -310,16 +310,17 @@ def safe_error(exc):
 
 
 def connection_check():
-    models = {m.id for m in client().models.list().data}
-    preferred = _setting('GROQ_CHAT_MODEL') or None
-    candidates = [preferred] if preferred else ['llama-3.3-70b-versatile', 'openai/gpt-oss-20b']
-    selected = next((m for m in candidates if m in models), None)
-    if not selected:
-        raise RuntimeError('No supported answer model is available. Set GROQ_CHAT_MODEL in Render.')
-    if 'whisper-large-v3-turbo' not in models:
-        raise RuntimeError('The speech model is unavailable for this account.')
+    """Validate local Groq configuration without a heavyweight discovery request.
+
+    Actual authentication is exercised by transcription/generation when the user
+    performs that action. Avoiding models.list() keeps the hosted UI responsive
+    on small Render instances.
+    """
+    if not key_configured():
+        raise ValueError('GROQ_API_KEY is missing in Render Environment settings.')
+    selected = _setting('GROQ_CHAT_MODEL') or 'llama-3.3-70b-versatile'
     return {
-        'authentication': 'passed',
+        'authentication': 'configured',
         'chat_model': selected,
         'speech_model': 'whisper-large-v3-turbo',
     }
@@ -404,7 +405,9 @@ def capture_audio(seconds=20):
         ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
         failures = []
 
-        for stream_url in streams:
+        # Keep a live-capture click bounded on constrained hosting. Trying every
+        # historical relay can hold several FFmpeg processes/timeouts back-to-back.
+        for stream_url in streams[:3]:
             if path.exists():
                 path.unlink()
 
@@ -413,6 +416,7 @@ def capture_audio(seconds=20):
                 '-hide_banner',
                 '-nostdin',
                 '-loglevel', 'error',
+                '-threads', '1',
                 '-user_agent', 'Mozilla/5.0 Stream-RAG/1.0',
                 '-headers', 'Referer: https://www.bbc.com/\r\nOrigin: https://www.bbc.com\r\nAccept: */*\r\n',
                 '-rw_timeout', '10000000',
@@ -454,8 +458,8 @@ def capture_audio(seconds=20):
                 host_summary.append(label)
         short_summary = '; '.join(host_summary[-4:])
         raise RuntimeError(
-            f'BBC live capture failed after trying {len(streams)} source'
-            f'{"s" if len(streams) != 1 else ""} across {len(set(hosts))} host'
+            f'BBC live capture failed after trying {min(len(streams), 3)} source'
+            f'{"s" if min(len(streams), 3) != 1 else ""} across {len(set(hosts[:3]))} host'
             f'{"s" if len(set(hosts)) != 1 else ""}. '
             f'Last checks: {short_summary or reason}. '
             'If all BBC CDN routes are blocked by this Render region, uploaded audio '

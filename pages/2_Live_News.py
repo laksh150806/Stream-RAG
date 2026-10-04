@@ -41,7 +41,7 @@ if st.button('Check Groq connection', key='news_check'):
     try:
         config = connection_check()
         st.session_state.news_connection = config
-        st.success('Groq authentication passed.')
+        st.success('Groq API key is configured. Authentication will be verified on the first transcription or generated answer.')
     except Exception as exc:
         st.error(safe_error(exc))
 
@@ -129,7 +129,7 @@ with query_tab:
 # -----------------------------------------------------------------------------
 with capture_tab:
     st.subheader('📡 Manual BBC Audio Capture & Real-Time Transcription')
-    st.caption('Manually trigger audio capture from the BBC World Service stream without running a background loop.')
+    st.caption('Manually trigger a bounded BBC World Service capture without running a background loop. If the broadcaster blocks this Render region, browser recording/upload/paste remain available.')
 
     cap_col1, cap_col2 = st.columns([1, 1])
 

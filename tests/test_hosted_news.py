@@ -113,7 +113,14 @@ class HostedNewsTests(unittest.TestCase):
             self.assertFalse(app.exception)
             app.button(key='news_check').click().run()
             self.assertFalse(app.exception)
-            self.assertIn('Groq authentication passed.', [s.value for s in app.success])
+            self.assertTrue(any('Groq API key is configured.' in s.value for s in app.success))
+
+    def test_connection_check_is_local_and_does_not_call_groq(self):
+        with patch.dict(os.environ, {'GROQ_API_KEY': 'test-not-real'}), \
+                patch.object(news, 'client') as groq_client:
+            result = news.connection_check()
+        self.assertEqual(result['authentication'], 'configured')
+        groq_client.assert_not_called()
 
     def test_api_errors_do_not_expose_response(self):
         exc = Exception('secret response body')
