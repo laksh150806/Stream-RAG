@@ -77,13 +77,13 @@ with query_tab:
         enable_reranking = st.toggle(
             'Toggle Reranking',
             value=True,
-            help='Rerank ChromaDB vector results using BM25 hybrid lexical scoring for improved accuracy',
+            help='Rerank transcript results using BM25 lexical scoring for improved accuracy',
             key='rerank_toggle',
         )
 
     if st.button('🔍 Search & Generate Answer', type='primary', disabled=not question.strip(), key='btn_query'):
         try:
-            with st.spinner('Querying ChromaDB vector index & generating grounded answer…'):
+            with st.spinner('Searching the transcript index & generating a grounded answer…'):
                 config = st.session_state.get('news_connection') or connection_check()
                 st.session_state.news_connection = config
 
@@ -128,57 +128,14 @@ with query_tab:
 # TAB 2: 📡 Manual Capture Tab
 # -----------------------------------------------------------------------------
 with capture_tab:
-    st.subheader('📡 Manual BBC Audio Capture & Real-Time Transcription')
-    st.caption('Try direct BBC World Service capture first. If the broadcaster blocks this Render region, use the browser capture below to keep the same Whisper → ChromaDB → RAG pipeline working.')
+    st.subheader('🎙️ Live Audio Capture & Transcription')
+    st.caption('Record BBC World Service or any live audio in your browser, transcribe it with Groq Whisper, and make it immediately queryable by the RAG pipeline.')
 
-    cap_col1, cap_col2 = st.columns([1, 1])
-
-    with cap_col1:
-        num_chunks = st.selectbox(
-            'Number of chunks to capture at once',
-            [1, 2, 3, 4, 5],
-            index=0,
-            help='Capture 1–5 consecutive audio chunks from the live BBC stream',
-            key='manual_num_chunks',
-        )
-
-    with cap_col2:
-        chunk_seconds = st.select_slider(
-            'Chunk Duration (seconds)',
-            options=[10, 15, 20, 30],
-            value=20,
-            key='manual_chunk_duration',
-        )
-
-    if st.button('🎙️ Capture & Transcribe BBC Stream', type='primary', key='btn_manual_capture'):
-        captured_docs = []
-        progress_bar = st.progress(0.0)
-
-        for i in range(1, num_chunks + 1):
-            with st.spinner(f'Capturing chunk {i}/{num_chunks} ({chunk_seconds}s) from BBC stream…'):
-                try:
-                    audio_bytes = capture_audio(chunk_seconds)
-                    with st.spinner(f'Transcribing chunk {i}/{num_chunks} with Groq Whisper…'):
-                        text = transcribe(audio_bytes)
-                        doc = add_transcript_to_db(text, source='BBC World Service (Manual)')
-                        captured_docs.append(doc)
-                        st.success(f'✅ Chunk {i}/{num_chunks} transcribed & saved to ChromaDB!')
-                        st.info(f"**ID:** `{doc['id']}` | **Words:** {doc['metadata']['word_count']} | **Timestamp:** {doc['metadata']['timestamp']}")
-                        st.write(doc['text'])
-                except Exception as exc:
-                    st.error(f'Chunk {i}/{num_chunks} failed: {safe_error(exc)}')
-
-            progress_bar.progress(float(i) / float(num_chunks))
-
-        if captured_docs:
-            st.toast(f'Successfully captured and indexed {len(captured_docs)} chunk(s) in ChromaDB!')
-
-    st.divider()
-    st.markdown('### 🌐 Browser Capture — reliable hosted fallback')
+    st.markdown('### 🌐 Browser Audio Capture')
     st.caption(
-        'Use this when BBC blocks the Render server. On desktop, play BBC World Service in another tab/device '
+        'On desktop, play BBC World Service in another tab/device '
         'and record it here; on mobile, play the broadcast on another device or speaker. The recorded audio is '
-        'sent directly to Groq Whisper, indexed in ChromaDB, and becomes immediately queryable.'
+        'sent directly to Groq Whisper, stored in the hosted transcript index, and becomes immediately queryable.'
     )
     browser_bbc = st.audio_input('Record BBC audio in your browser', key='bbc_browser_capture')
     if st.button('🎙️ Transcribe & Index Browser BBC Audio', type='primary',
@@ -187,7 +144,7 @@ with capture_tab:
             with st.spinner('Transcribing BBC audio with Groq Whisper…'):
                 text = transcribe(browser_bbc.getvalue(), 'bbc-browser.wav')
                 doc = add_transcript_to_db(text, source='BBC World Service (Browser Capture)')
-            st.success('✅ BBC audio transcribed and indexed in ChromaDB.')
+            st.success('✅ BBC audio transcribed and indexed in the transcript index.')
             st.info(f"**ID:** `{doc['id']}` | **Words:** {doc['metadata']['word_count']} | **Timestamp:** {doc['metadata']['timestamp']}")
             st.write(doc['text'])
         except Exception as exc:
@@ -204,7 +161,7 @@ with capture_tab:
                     with st.spinner('Transcribing browser recording…'):
                         text = transcribe(recorded.getvalue(), 'browser-rec.wav')
                         doc = add_transcript_to_db(text, source='Browser Recording')
-                    st.success('Recording saved to ChromaDB.')
+                    st.success('Recording saved to the transcript index.')
                     st.write(text)
                 except Exception as exc:
                     st.error(safe_error(exc))
@@ -217,7 +174,7 @@ with capture_tab:
                     with st.spinner('Transcribing uploaded audio file…'):
                         text = transcribe(upload.getvalue(), upload.name)
                         doc = add_transcript_to_db(text, source='Uploaded Audio')
-                    st.success('Uploaded transcript saved to ChromaDB.')
+                    st.success('Uploaded transcript saved to the transcript index.')
                     st.write(text)
                 except Exception as exc:
                     st.error(safe_error(exc))
@@ -226,14 +183,14 @@ with capture_tab:
         pasted = st.text_area('Paste Raw Transcript Text', max_chars=100000, key='manual_pasted')
         if st.button('Store Pasted Transcript', disabled=not pasted.strip(), key='btn_store_pasted'):
             doc = add_transcript_to_db(pasted, source='Pasted Transcript')
-            st.success('Pasted transcript saved to ChromaDB.')
+            st.success('Pasted transcript saved to the transcript index.')
             st.write(doc['text'])
 
 # -----------------------------------------------------------------------------
 # TAB 3: 📊 Database Tab
 # -----------------------------------------------------------------------------
 with db_tab:
-    st.subheader('📊 ChromaDB Transcript Storage Status')
+    st.subheader('📊 Transcript Storage Status')
 
     st.caption('Database access is loaded on demand so normal page navigation stays lightweight.')
 
