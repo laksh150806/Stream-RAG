@@ -1,5 +1,6 @@
 """Theme 4 workspace. Run: streamlit run app.py."""
 import json
+import re
 import time
 from pathlib import Path
 
@@ -30,36 +31,77 @@ def fresh_session(payload=None):
     st.session_state.last_transcript = ''
 
 
+def text_payload(text, title='Pasted evidence'):
+    """Turn arbitrary pasted text into a corpus without requiring hand-authored JSON."""
+    text = (text or '').strip()
+    if not text:
+        raise ValueError('Paste some evidence text first.')
+    if len(text) > 100000:
+        raise ValueError('Pasted evidence is limited to 100,000 characters.')
+    # Paragraphs become independent source documents, which gives useful citations
+    # while keeping the core retriever/data contract unchanged.
+    parts = [p.strip() for p in re.split(r'\n\s*\n+', text) if p.strip()]
+    if not parts:
+        parts = [text]
+    if len(parts) > 1500:
+        raise ValueError('Pasted evidence contains too many paragraphs (maximum 1500).')
+    return {
+        'name': title,
+        'synthetic': False,
+        'documents': [
+            {'id': f'user-{i:04d}', 'title': f'{title} · section {i}', 'text': part, 'metadata': {}}
+            for i, part in enumerate(parts, 1)
+        ],
+    }
+
+
 if 'engine' not in st.session_state:
     fresh_session()
 
 with st.sidebar:
     st.title('◉ Stream-RAG')
     st.caption('THEME 4 WORKSPACE')
-    st.success('Corpus-only mode · No API key needed')
-    st.caption('Answers are source excerpts. This mode uses local BM25 retrieval with concept normalization, metadata-aware constraints, and rule-based intent parsing; it does not call a generative LLM.')
-    upload = st.file_uploader('Replace evidence corpus', type=['json'])
-    if st.button('Load uploaded corpus', disabled=upload is None):
-        try:
+    st.success('Local evidence mode · No API key needed')
+    st.caption('Bring your own evidence or use the bundled sample. Answers are exact source excerpts retrieved from the active workspace.')
+    st.markdown('**Build your evidence workspace**')
+    upload = st.file_uploader('Upload evidence', type=['txt', 'md', 'json'], help='TXT/Markdown can be uploaded directly. JSON uses the documented corpus format.')
+    pasted = st.text_area('Or paste evidence text', height=120, placeholder='Paste policies, notes, documentation, meeting notes, etc.', key='workspace_paste')
+    build_paste = st.button('Build from pasted text', disabled=not pasted.strip(), width='stretch')
+    load_upload = st.button('Build from uploaded file', disabled=upload is None, width='stretch')
+    sample = st.button('Load sample dataset', width='stretch')
+    try:
+        if build_paste:
+            fresh_session(text_payload(pasted))
+            st.rerun()
+        if load_upload:
             if upload.size > 2 * 1024 * 1024:
                 raise ValueError('Upload limit is 2 MB.')
-            payload = json.loads(upload.getvalue())
-            load_corpus(payload)
+            raw = upload.getvalue()
+            if upload.name.lower().endswith('.json'):
+                payload = json.loads(raw)
+                load_corpus(payload)
+            else:
+                payload = text_payload(raw.decode('utf-8'), Path(upload.name).stem or 'Uploaded evidence')
             fresh_session(payload)
             st.rerun()
-        except (ValueError, TypeError, KeyError) as exc:
-            st.error(str(exc))
+        if sample:
+            fresh_session(json.loads((ROOT / 'data/demo_corpus.json').read_text()))
+            st.rerun()
+    except (ValueError, TypeError, KeyError, UnicodeError, json.JSONDecodeError) as exc:
+        st.error(str(exc))
     if st.button('Reset conversation', width='stretch'):
         fresh_session(st.session_state.corpus_payload)
         st.rerun()
     st.divider()
-    st.caption('The bundled corpus is synthetic demo data, not real company or travel policy. Uploaded evidence stays in this session.')
+    active_name = st.session_state.corpus_payload.get('name', 'Evidence workspace') if isinstance(st.session_state.corpus_payload, dict) else 'Evidence workspace'
+    st.caption(f'Active workspace: {active_name} · {len(st.session_state.engine.retriever.chunks)} searchable chunk(s)')
+    st.caption('Evidence stays in this browser session. The bundled sample is synthetic demo data.')
     st.page_link('pages/2_Live_News.py', label='Live audio / news RAG', icon='🎙️')
 
 engine = st.session_state.engine
 st.markdown('<div class="eyebrow">LISTEN EARLY · KEEP CONTEXT · SHOW THE EVIDENCE</div>', unsafe_allow_html=True)
 st.title('Answers that evolve with you.')
-st.caption('Watch retrieval begin before a transcript ends, then refine the same answer as details change.')
+st.caption('Bring your own evidence, ask naturally, and watch retrieval begin before the transcript ends. The bundled workshop data is only an optional sample.')
 session_tab, corpus_tab, trace_tab, eval_tab, about_tab = st.tabs(['Live session', 'Evidence library', 'Trace & export', 'Evaluation', 'How it works'])
 
 
@@ -221,10 +263,11 @@ with session_tab:
         st.dataframe(timeline, width='stretch', hide_index=True)
 
     st.divider()
-    st.markdown('**Try this sequence**')
-    st.code('Workshop capacity in Pune and cancellation policy and catering options and accessibility\nActually city: Delhi\nPlease repeat your last answer in two bullets.', language=None)
-    st.markdown('**Also try independent sentence scopes**')
-    st.code('What is workshop capacity in Pune? What is the cancellation policy in Delhi? What are catering options in Bengaluru?', language=None)
+    if st.session_state.corpus_payload.get('synthetic'):
+        st.markdown('**Sample-dataset demo sequence**')
+        st.code('Workshop capacity in Pune and cancellation policy and catering options and accessibility\\nActually city: Delhi\\nPlease repeat your last answer in two bullets.', language=None)
+        st.markdown('**Also try independent sentence scopes**')
+        st.code('What is workshop capacity in Pune? What is the cancellation policy in Delhi? What are catering options in Bengaluru?', language=None)
 
 with corpus_tab:
     st.subheader('Every answer starts here')
