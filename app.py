@@ -52,25 +52,43 @@ def uploaded_text(upload):
     return upload.getvalue().decode('utf-8')
 
 
+def evidence_sections(text, target=850, overlap=140):
+    """Create retrieval-sized overlapping sections while preserving source text."""
+    text = (text or '').strip()
+    if not text:
+        return []
+    sections, start = [], 0
+    while start < len(text):
+        end = min(len(text), start + target)
+        if end < len(text):
+            boundary = max(text.rfind('\n', start + target // 2, end), text.rfind(' ', start + target // 2, end))
+            if boundary > start:
+                end = boundary
+        piece = text[start:end].strip()
+        if piece:
+            sections.append(piece)
+        if end >= len(text):
+            break
+        start = max(start + 1, end - overlap)
+    return sections
+
+
 def text_payload(text, title='Pasted evidence'):
-    """Turn arbitrary pasted text into a corpus without requiring hand-authored JSON."""
+    """Turn arbitrary evidence into retrieval-sized overlapping source sections."""
     text = (text or '').strip()
     if not text:
         raise ValueError('Paste some evidence text first.')
     if len(text) > 100000:
         raise ValueError('Pasted evidence is limited to 100,000 characters.')
-    # Paragraphs become independent source documents, which gives useful citations
-    # while keeping the core retriever/data contract unchanged.
-    parts = [p.strip() for p in re.split(r'\n\s*\n+', text) if p.strip()]
-    if not parts:
-        parts = [text]
+    parts = evidence_sections(text)
     if len(parts) > 1500:
-        raise ValueError('Pasted evidence contains too many paragraphs (maximum 1500).')
+        raise ValueError('Evidence contains too many sections (maximum 1500).')
     return {
         'name': title,
         'synthetic': False,
+        'source_chars': len(text),
         'documents': [
-            {'id': f'user-{i:04d}', 'title': f'{title} · section {i}', 'text': part, 'metadata': {}}
+            {'id': f'user-{i:04d}', 'title': f'{title} · section {i}', 'text': part, 'metadata': {'section': i}}
             for i, part in enumerate(parts, 1)
         ],
     }
@@ -115,7 +133,10 @@ with st.sidebar:
         st.rerun()
     st.divider()
     active_name = st.session_state.corpus_payload.get('name', 'Evidence workspace') if isinstance(st.session_state.corpus_payload, dict) else 'Evidence workspace'
-    st.caption(f'Active workspace: {active_name} · {len(st.session_state.engine.retriever.chunks)} searchable chunk(s)')
+    chunk_count = len(st.session_state.engine.retriever.chunks)
+    doc_count = len(st.session_state.corpus_payload.get('documents', [])) if isinstance(st.session_state.corpus_payload, dict) else 0
+    st.success(f'Indexed successfully · {doc_count} evidence section(s) · {chunk_count} searchable chunk(s)')
+    st.caption(f'Active workspace: {active_name}')
     st.caption('Evidence stays in this browser session. The bundled sample is synthetic demo data.')
     st.page_link('pages/2_Live_News.py', label='Live audio / news RAG', icon='🎙️')
 
