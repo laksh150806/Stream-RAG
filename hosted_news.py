@@ -36,7 +36,11 @@ BBC_PLAYLIST_URLS = (
 )
 
 BBC_STREAM_URLS = (
-    # Direct public BBC World Service stream URL
+    # Prefer BBC's HLS World Service endpoints. The legacy MP3 relay is retained
+    # as a later fallback because some cloud regions cannot read it reliably.
+    'https://a.files.bbci.co.uk/media/live/manifesto/audio/simulcast/hls/nonuk/sbr_low/ak/bbc_world_service.m3u8',
+    'http://a.files.bbci.co.uk/media/live/manifesto/audio/simulcast/hls/nonuk/sbr_low/ak/bbc_world_service.m3u8',
+    'http://as-hls-ww.live.cf.md.bbci.co.uk/pool_87948813/live/ww/bbc_world_service/bbc_world_service.isml/bbc_world_service-audio=320000.norewind.m3u8',
     'http://stream.live.vc.bbcmedia.co.uk/bbc_world_service',
     'https://lstn.lv/bbcradio.m3u8?station=bbc_world_service&bitrate=96000',
     'http://lstn.lv/bbcradio.m3u8?station=bbc_world_service&bitrate=96000',
