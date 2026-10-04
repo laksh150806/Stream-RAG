@@ -48,11 +48,14 @@ The core workspace is deterministic and corpus-only: it does not need an API key
 - **Selective late refinement** — a correction such as `Actually city: Delhi` only re-runs intents that depend on the changed city.
 - **Presentation-only suppression** — requests such as `repeat the last answer in two bullets` reuse evidence and execute no new corpus search.
 - **Paraphrase-aware lexical retrieval** — concept normalization handles common equivalents such as `delegates → people`, `fit → capacity`, `called off → cancellation`, and `overseas → international`.
-- **Grounded evidence** — returned claims are exact corpus excerpts with source IDs.\n- **Optional grounded AI answer** — when Groq is configured, generation receives only already-retrieved evidence, cites retrieved source IDs, and is blocked from silently citing unretrieved sources.
+- **Grounded evidence** — returned claims are exact corpus excerpts with source IDs.
+- **Optional grounded AI answer** — when Groq is configured, generation receives only already-retrieved evidence, cites retrieved source IDs, and is blocked from silently citing unretrieved sources.
 - **Citation guard** — source IDs and quotes are mechanically validated before output.
 - **Session-only state** — conversational state stays inside the active session.
 - **Observability** — the UI exposes controller state, answer version, search count, active intents, early-retrieval lead, intent scopes, a live decision timeline, and the full event trace.
-- **Bring-your-own evidence** — upload PDF, DOCX, TXT, Markdown, or JSON; long text is converted into overlapping retrieval-sized evidence sections.\n- **Visible indexing status** — the workspace reports indexed evidence sections and searchable chunks immediately after ingestion.\n- **Exportable telemetry** — session events and answer versions can be downloaded as JSON.
+- **Bring-your-own evidence** — upload PDF, DOCX, TXT, Markdown, or JSON; long text is converted into overlapping retrieval-sized evidence sections.
+- **Visible indexing status** — the workspace reports indexed evidence sections and searchable chunks immediately after ingestion.
+- **Exportable telemetry** — session events and answer versions can be downloaded as JSON.
 
 ## 🚀 90-second judge demo
 
