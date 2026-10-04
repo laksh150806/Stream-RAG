@@ -405,7 +405,8 @@ with session_tab:
     timeline = decision_timeline()
     if timeline:
         with st.expander('Live decision timeline · technical trace'):
-            st.dataframe(timeline, width='stretch', hide_index=True)
+            safe_timeline = [{k: (json.dumps(v, sort_keys=True) if isinstance(v, (dict, list)) else v) for k, v in row.items()} for row in timeline]
+            st.dataframe(safe_timeline, width='stretch', hide_index=True)
 
     st.divider()
     if st.session_state.corpus_payload.get('synthetic'):
@@ -427,7 +428,8 @@ with trace_tab:
     st.subheader('A trace for every input event')
     st.download_button('Export session + answer versions', json.dumps(engine.export(), indent=2), 'stream-rag-session.json', 'application/json')
     st.download_button('Download sample input replay', (ROOT / 'data/demo_stream.jsonl').read_text(), 'demo_stream.jsonl', 'application/x-ndjson')
-    st.dataframe(engine.events, width='stretch')
+    safe_events = [{k: (json.dumps(v, sort_keys=True) if isinstance(v, (dict, list)) else v) for k, v in row.items()} for row in engine.events]
+    st.dataframe(safe_events, width='stretch')
     with st.expander('Answer version history'):
         st.json(engine.versions)
 
