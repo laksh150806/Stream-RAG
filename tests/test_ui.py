@@ -31,7 +31,7 @@ class UITests(unittest.TestCase):
         source = (root / 'app.py').read_text(encoding='utf-8')
         self.assertIn('Retrieved evidence:', source)
         self.assertIn("invalid = cited - allowed", source)
-        self.assertIn('the full corpus is never sent to generation', source)
+        self.assertIn('never the full corpus', source)
 
 
 
