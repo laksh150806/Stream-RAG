@@ -111,7 +111,7 @@ with query_tab:
         st.markdown('### 💡 Answer')
         st.write(result['answer'])
 
-        rerank_status = 'Enabled (Hybrid Vector + BM25)' if result.get('rerank') else 'Disabled (Vector Distance)'
+        rerank_status = 'Enabled (BM25 reranking)' if result.get('rerank') else 'Disabled (retrieval score)'
         st.caption(f"**Model:** {result['model']} | **Reranking:** {rerank_status} | **Window:** {time_window}")
 
         st.markdown('#### 📚 Source Citations')
@@ -119,7 +119,7 @@ with query_tab:
             st.info('No matching transcript citations returned for this query.')
         else:
             for idx, source in enumerate(result['sources'], 1):
-                score_label = f"Rerank Score: {source.get('rerank_score')}" if 'rerank_score' in source else f"Vector Score: {source.get('vector_score')}"
+                score_label = f"Rerank Score: {source.get('rerank_score')}" if 'rerank_score' in source else f"Retrieval Score: {source.get('vector_score')}"
                 with st.expander(f"[{source['id']}] {source['title']} — {score_label}"):
                     st.write(source['text'])
                     st.caption(f"**Chunk ID:** `{source['id']}` | **Word Count:** {source['metadata'].get('word_count', 0)}")

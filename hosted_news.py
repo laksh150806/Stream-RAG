@@ -207,7 +207,7 @@ def answer_db(question, model, minutes=None, rerank=True):
 
     if not chunks:
         return {
-            'answer': 'No matching transcript evidence found in ChromaDB for the specified time window.',
+            'answer': 'No matching transcript evidence found in hosted transcript store for the specified time window.',
             'sources': [],
             'model': model,
             'rerank': rerank,
@@ -459,7 +459,7 @@ def answer(question, documents, model, minutes=None):
     """Answer from the caller-provided transcript set only.
 
     This compatibility path is intentionally isolated from the persistent
-    ChromaDB collection so stale/unrelated rows from other sessions cannot
+    hosted transcript store collection so stale/unrelated rows from other sessions cannot
     leak into a grounded generation request.
     """
     if not question.strip() or len(question) > 2000:
