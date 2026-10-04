@@ -248,14 +248,7 @@ def answer_db(question, model, minutes=None, rerank=True):
 
 
 def clear_db():
-    import chromadb
-    os.makedirs(DB_DIR, exist_ok=True)
-    client = chromadb.PersistentClient(path=DB_DIR)
-    try:
-        client.delete_collection(name=COLLECTION_NAME)
-    except Exception:
-        pass
-    client.get_or_create_collection(name=COLLECTION_NAME, metadata={'hnsw:space': 'cosine'})
+    _save_hosted_docs([])
 
 
 def key_configured():
@@ -276,7 +269,7 @@ def safe_error(exc):
     if code == 429:
         return 'Groq rate limit or quota reached. Wait before retrying.'
     if code in (400, 403, 404):
-        return 'Groq could not process this request. Check model access and audio format.'
+        return 'Groq rejected this request. Check that the configured model is available for this account.'
     if isinstance(exc, (ValueError, RuntimeError)):
         return str(exc)
     return 'The service request failed. Please retry shortly.'
@@ -291,7 +284,10 @@ def connection_check():
     """
     if not key_configured():
         raise ValueError('GROQ_API_KEY is missing in Render Environment settings.')
-    selected = _setting('GROQ_CHAT_MODEL') or 'llama-3.3-70b-versatile'
+    selected = _setting('GROQ_CHAT_MODEL') or 'openai/gpt-oss-20b'
+    # Groq retired Llama 3.3 for free/developer accounts in Aug 2026.
+    if selected in ('llama-3.3-70b-versatile', 'llama-3.1-8b-instant'):
+        selected = 'openai/gpt-oss-20b'
     return {
         'authentication': 'configured',
         'chat_model': selected,
