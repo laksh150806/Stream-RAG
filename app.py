@@ -121,10 +121,12 @@ with st.sidebar:
     st.title('◉ Stream-RAG')
     st.caption('THEME 4 WORKSPACE')
     st.success('Local evidence mode · No API key needed')
-    st.caption('Choose a file, then tap Use uploaded evidence. The active workspace is shown below.')
+    st.caption('Choose a file, activate it once, then ask questions against that evidence only.')
     st.markdown('**Build your evidence workspace**')
     upload = st.file_uploader('Upload evidence', type=['pdf', 'docx', 'txt', 'md', 'json'], help='PDF, DOCX, TXT and Markdown are converted automatically. JSON uses the documented corpus format.')
     pasted = st.text_area('Or paste evidence text', height=120, placeholder='Paste policies, notes, documentation, meeting notes, etc.', key='workspace_paste')
+    if upload is not None:
+        st.info(f'Selected: {upload.name} · {upload.size / 1024:.1f} KB')
     activate_upload = st.button('Use uploaded evidence', disabled=upload is None, type='primary', width='stretch')
     build_paste = st.button('Use pasted evidence', disabled=not pasted.strip(), width='stretch')
     sample = st.button('Load sample dataset', width='stretch')
@@ -162,6 +164,8 @@ with st.sidebar:
     chunk_count = len(st.session_state.engine.retriever.chunks)
     doc_count = len(st.session_state.corpus_payload.get('documents', [])) if isinstance(st.session_state.corpus_payload, dict) else 0
     st.success(f'Indexed successfully · {doc_count} evidence section(s) · {chunk_count} searchable chunk(s)')
+    if st.session_state.get('active_source_file'):
+        st.caption(f"Source file: {st.session_state.active_source_file}")
     if st.session_state.corpus_payload.get('synthetic'):
         st.warning(f'ACTIVE: {active_name} (bundled sample)')
     else:
@@ -325,7 +329,10 @@ def draw_answer():
 
 
 with session_tab:
-    message = st.text_input('Question or follow-up', placeholder='Workshop capacity in Pune and cancellation policy and catering options', key='message')
+    placeholder = ('Workshop capacity in Pune and cancellation policy and catering options'
+                   if st.session_state.corpus_payload.get('synthetic')
+                   else 'Ask a question about the active evidence…')
+    message = st.text_input('Question or follow-up', placeholder=placeholder, key='message')
     stream = st.button('▶ Stream message', type='primary')
     st.caption('Demo input is replayed in small cumulative text chunks, simulating incoming speech. It does not record your microphone.')
     with st.expander('Send actual transcript fragments / replay JSONL'):
@@ -397,8 +404,8 @@ with session_tab:
 
     timeline = decision_timeline()
     if timeline:
-        st.markdown('**Live decision timeline**')
-        st.dataframe(timeline, width='stretch', hide_index=True)
+        with st.expander('Live decision timeline · technical trace'):
+            st.dataframe(timeline, width='stretch', hide_index=True)
 
     st.divider()
     if st.session_state.corpus_payload.get('synthetic'):
