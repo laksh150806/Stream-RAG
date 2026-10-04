@@ -119,29 +119,38 @@ with st.sidebar:
     st.title('◉ Stream-RAG')
     st.caption('THEME 4 WORKSPACE')
     st.success('Local evidence mode · No API key needed')
-    st.caption('Bring your own evidence or use the bundled sample. Answers are exact source excerpts retrieved from the active workspace.')
+    st.caption('Upload evidence and it becomes active automatically. Answers come only from the active workspace.')
     st.markdown('**Build your evidence workspace**')
     upload = st.file_uploader('Upload evidence', type=['pdf', 'docx', 'txt', 'md', 'json'], help='PDF, DOCX, TXT and Markdown are converted automatically. JSON uses the documented corpus format.')
     pasted = st.text_area('Or paste evidence text', height=120, placeholder='Paste policies, notes, documentation, meeting notes, etc.', key='workspace_paste')
     build_paste = st.button('Build from pasted text', disabled=not pasted.strip(), width='stretch')
-    load_upload = st.button('Build from uploaded file', disabled=upload is None, width='stretch')
     sample = st.button('Load sample dataset', width='stretch')
     try:
         if build_paste:
             fresh_session(text_payload(pasted))
+            st.session_state.active_upload_signature = None
             st.rerun()
-        if load_upload:
-            if upload.size > 2 * 1024 * 1024:
-                raise ValueError('Upload limit is 2 MB.')
-            raw = upload.getvalue()
-            if upload.name.lower().endswith('.json'):
-                payload = json.loads(raw)
-                load_corpus(payload)
-            else:
-                payload = text_payload(uploaded_text(upload), Path(upload.name).stem or 'Uploaded evidence')
-            fresh_session(payload)
-            st.rerun()
+        # Selecting a file activates it immediately. This prevents a judge from
+        # uploading evidence but accidentally querying the previous sample corpus.
+        if upload is not None:
+            signature = f'{upload.name}:{upload.size}'
+            if st.session_state.get('active_upload_signature') != signature:
+                if upload.size > 2 * 1024 * 1024:
+                    raise ValueError('Upload limit is 2 MB.')
+                raw = upload.getvalue()
+                if upload.name.lower().endswith('.json'):
+                    payload = json.loads(raw)
+                    load_corpus(payload)
+                    if isinstance(payload, dict):
+                        payload.setdefault('name', Path(upload.name).stem or 'Uploaded evidence')
+                        payload['synthetic'] = False
+                else:
+                    payload = text_payload(uploaded_text(upload), Path(upload.name).stem or 'Uploaded evidence')
+                fresh_session(payload)
+                st.session_state.active_upload_signature = signature
+                st.rerun()
         if sample:
+            st.session_state.active_upload_signature = None
             fresh_session(json.loads((ROOT / 'data/demo_corpus.json').read_text()))
             st.rerun()
     except (ValueError, TypeError, KeyError, UnicodeError, json.JSONDecodeError) as exc:
