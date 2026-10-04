@@ -216,49 +216,53 @@ with capture_tab:
 with db_tab:
     st.subheader('📊 ChromaDB Transcript Storage Status')
 
-    stats = get_db_stats()
+    st.caption('Database access is loaded on demand so normal page navigation stays lightweight.')
 
-    m1, m2 = st.columns(2)
-    with m1:
-        st.metric('Total Transcripts Indexed', stats['total_chunks'])
-    with m2:
-        st.metric('Total Words Indexed', stats['total_words'])
+    if st.button('📊 Load / Refresh Database Status', key='btn_db_load'):
+        try:
+            st.session_state.news_db_stats = get_db_stats()
+            st.session_state.news_recent_chunks = get_recent_chunks(limit=10)
+        except Exception as exc:
+            st.error(safe_error(exc))
 
-    st.divider()
-    st.markdown('### 🕒 10 Most Recent Transcript Chunks')
+    if 'news_db_stats' in st.session_state:
+        stats = st.session_state.news_db_stats
+        recent_chunks = st.session_state.get('news_recent_chunks', [])
 
-    recent_chunks = get_recent_chunks(limit=10)
+        m1, m2 = st.columns(2)
+        with m1:
+            st.metric('Total Transcripts Indexed', stats['total_chunks'])
+        with m2:
+            st.metric('Total Words Indexed', stats['total_words'])
 
-    if not recent_chunks:
-        st.info('No transcript chunks in ChromaDB database yet. Capture or transcribe audio to index items.')
-    else:
-        for idx, chunk in enumerate(recent_chunks, 1):
-            meta = chunk['metadata']
-            with st.expander(f"#{idx} [{chunk['id']}] {meta.get('source', 'Radio')} · {meta.get('timestamp', '')} ({meta.get('word_count', 0)} words)"):
-                st.write(chunk['text'])
-                st.caption(f"**Chunk ID:** `{chunk['id']}` | **Unix Timestamp:** `{meta.get('unix_time', 0)}`")
+        st.divider()
+        st.markdown('### 🕒 10 Most Recent Transcript Chunks')
+        if not recent_chunks:
+            st.info('No transcript chunks in the database yet. Capture or transcribe audio to index items.')
+        else:
+            for idx, chunk in enumerate(recent_chunks, 1):
+                meta = chunk['metadata']
+                with st.expander(f"#{idx} [{chunk['id']}] {meta.get('source', 'Radio')} · {meta.get('timestamp', '')} ({meta.get('word_count', 0)} words)"):
+                    st.write(chunk['text'])
+                    st.caption(f"**Chunk ID:** `{chunk['id']}` | **Unix Timestamp:** `{meta.get('unix_time', 0)}`")
 
-    st.divider()
-    st.markdown('### ⚙️ Database Actions')
-    btn_c1, btn_c2, btn_c3 = st.columns(3)
-
-    with btn_c1:
-        if st.button('🔄 Refresh Database Stats', key='btn_db_refresh'):
-            st.rerun()
-
-    with btn_c2:
-        all_chunks = get_recent_chunks(limit=1000)
-        export_json = json.dumps(all_chunks, indent=2)
-        st.download_button(
-            '📥 Export Database Transcripts (JSON)',
-            export_json,
-            'chromadb_transcripts.json',
-            'application/json',
-            key='btn_db_export',
-        )
-
-    with btn_c3:
-        if st.button('🗑️ Clear / Reset ChromaDB Database', type='secondary', key='btn_db_clear'):
-            clear_db()
-            st.warning('ChromaDB persistent database reset successfully.')
-            st.rerun()
+        st.divider()
+        st.markdown('### ⚙️ Database Actions')
+        btn_c1, btn_c2 = st.columns(2)
+        with btn_c1:
+            all_chunks = get_recent_chunks(limit=1000)
+            export_json = json.dumps(all_chunks, indent=2)
+            st.download_button(
+                '📥 Export Database Transcripts (JSON)',
+                export_json,
+                'chromadb_transcripts.json',
+                'application/json',
+                key='btn_db_export',
+            )
+        with btn_c2:
+            if st.button('🗑️ Clear / Reset Transcript Database', type='secondary', key='btn_db_clear'):
+                clear_db()
+                st.session_state.pop('news_db_stats', None)
+                st.session_state.pop('news_recent_chunks', None)
+                st.warning('Persistent transcript database reset successfully.')
+                st.rerun()

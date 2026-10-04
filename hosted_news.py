@@ -1,6 +1,8 @@
 """Session-scoped hosted audio RAG. Never log credentials or upstream response bodies."""
 import os
 import re
+import hashlib
+import math
 import subprocess
 import tempfile
 import time
@@ -59,6 +61,19 @@ BBC_STREAM_URLS = (
 
 
 DB_DIR = './streaming_rag'
+COLLECTION_NAME = 'bbc_transcripts_stable_v2'
+
+
+def _lightweight_embedding(text, dims=128):
+    """Deterministic local embedding that avoids Chroma's heavyweight ONNX model."""
+    vec = [0.0] * dims
+    for token in re.findall(r"[a-z0-9]+", text.lower()):
+        digest = hashlib.blake2b(token.encode('utf-8'), digest_size=8).digest()
+        value = int.from_bytes(digest, 'big')
+        idx = value % dims
+        vec[idx] += -1.0 if (value >> 8) & 1 else 1.0
+    norm = math.sqrt(sum(v * v for v in vec)) or 1.0
+    return [v / norm for v in vec]
 
 
 def get_chroma_collection():
@@ -68,7 +83,7 @@ def get_chroma_collection():
     os.makedirs(DB_DIR, exist_ok=True)
     client = chromadb.PersistentClient(path=DB_DIR)
     return client.get_or_create_collection(
-        name='bbc_transcripts',
+        name=COLLECTION_NAME,
         metadata={'hnsw:space': 'cosine'}
     )
 
@@ -94,6 +109,7 @@ def add_transcript_to_db(text, source='BBC World Service'):
     col = get_chroma_collection()
     col.add(
         documents=[text],
+        embeddings=[_lightweight_embedding(text)],
         metadatas=[metadata],
         ids=[chunk_id]
     )
@@ -151,7 +167,7 @@ def search_and_rerank_db(question, minutes=None, rerank=True, limit=6):
 
     fetch_n = min(30, total)
     res = col.query(
-        query_texts=[question],
+        query_embeddings=[_lightweight_embedding(question)],
         n_results=fetch_n,
         include=['documents', 'metadatas', 'distances']
     )
@@ -263,10 +279,10 @@ def clear_db():
     os.makedirs(DB_DIR, exist_ok=True)
     client = chromadb.PersistentClient(path=DB_DIR)
     try:
-        client.delete_collection(name='bbc_transcripts')
+        client.delete_collection(name=COLLECTION_NAME)
     except Exception:
         pass
-    client.get_or_create_collection(name='bbc_transcripts', metadata={'hnsw:space': 'cosine'})
+    client.get_or_create_collection(name=COLLECTION_NAME, metadata={'hnsw:space': 'cosine'})
 
 
 def key_configured():
