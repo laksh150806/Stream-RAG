@@ -481,8 +481,16 @@ def answer(question, documents, model, minutes=None):
     if eligible:
         retriever = Retriever(load_corpus(eligible))
         hits = retriever.search(question, retriever.constraints(question), limit=6)
+        # load_corpus appends :sN to chunk IDs. Map each retrieved chunk back
+        # to its caller-provided document so only retrieved evidence reaches Groq.
         by_id = {doc.get('id'): doc for doc in eligible}
-        chunks = [by_id[hit.id] for hit in hits if hit.id in by_id]
+        chunks = []
+        seen = set()
+        for hit in hits:
+            source_id = hit.id.rsplit(':s', 1)[0]
+            if source_id in by_id and source_id not in seen:
+                chunks.append(by_id[source_id])
+                seen.add(source_id)
     else:
         chunks = []
 
