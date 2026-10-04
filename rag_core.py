@@ -152,8 +152,9 @@ class Retriever:
             overlap = q & terms.keys()
             if not overlap:
                 continue
-            # Require meaningful query coverage so one stray word cannot become evidence.
-            if len(q) >= 3 and len(overlap) / len(q) < 0.34:
+            # Reject a lone generic overlap (for example only "policy") on a longer query.
+            # Two matching concepts remain enough for paraphrases with extra conversational words.
+            if len(q) >= 3 and len(overlap) == 1:
                 continue
             score = 0.0
             length = sum(terms.values())
