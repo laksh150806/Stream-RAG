@@ -121,38 +121,35 @@ with st.sidebar:
     st.title('◉ Stream-RAG')
     st.caption('THEME 4 WORKSPACE')
     st.success('Local evidence mode · No API key needed')
-    st.caption('Upload evidence and it becomes active automatically. Answers come only from the active workspace.')
+    st.caption('Choose a file, then tap Use uploaded evidence. The active workspace is shown below.')
     st.markdown('**Build your evidence workspace**')
     upload = st.file_uploader('Upload evidence', type=['pdf', 'docx', 'txt', 'md', 'json'], help='PDF, DOCX, TXT and Markdown are converted automatically. JSON uses the documented corpus format.')
     pasted = st.text_area('Or paste evidence text', height=120, placeholder='Paste policies, notes, documentation, meeting notes, etc.', key='workspace_paste')
-    build_paste = st.button('Build from pasted text', disabled=not pasted.strip(), width='stretch')
+    activate_upload = st.button('Use uploaded evidence', disabled=upload is None, type='primary', width='stretch')
+    build_paste = st.button('Use pasted evidence', disabled=not pasted.strip(), width='stretch')
     sample = st.button('Load sample dataset', width='stretch')
     try:
+        if activate_upload:
+            if upload.size > 2 * 1024 * 1024:
+                raise ValueError('Upload limit is 2 MB.')
+            raw = upload.getvalue()
+            if upload.name.lower().endswith('.json'):
+                payload = json.loads(raw)
+                load_corpus(payload)
+                if isinstance(payload, dict):
+                    payload['name'] = Path(upload.name).stem or 'Uploaded evidence'
+                    payload['synthetic'] = False
+            else:
+                payload = text_payload(uploaded_text(upload), Path(upload.name).stem or 'Uploaded evidence')
+            fresh_session(payload)
+            st.session_state.active_source_file = upload.name
+            st.rerun()
         if build_paste:
             fresh_session(text_payload(pasted))
-            st.session_state.active_upload_signature = None
+            st.session_state.active_source_file = 'Pasted evidence'
             st.rerun()
-        # Selecting a file activates it immediately. This prevents a judge from
-        # uploading evidence but accidentally querying the previous sample corpus.
-        if upload is not None:
-            signature = f'{upload.name}:{upload.size}'
-            if st.session_state.get('active_upload_signature') != signature:
-                if upload.size > 2 * 1024 * 1024:
-                    raise ValueError('Upload limit is 2 MB.')
-                raw = upload.getvalue()
-                if upload.name.lower().endswith('.json'):
-                    payload = json.loads(raw)
-                    load_corpus(payload)
-                    if isinstance(payload, dict):
-                        payload.setdefault('name', Path(upload.name).stem or 'Uploaded evidence')
-                        payload['synthetic'] = False
-                else:
-                    payload = text_payload(uploaded_text(upload), Path(upload.name).stem or 'Uploaded evidence')
-                fresh_session(payload)
-                st.session_state.active_upload_signature = signature
-                st.rerun()
         if sample:
-            st.session_state.active_upload_signature = None
+            st.session_state.active_source_file = None
             fresh_session(json.loads((ROOT / 'data/demo_corpus.json').read_text()))
             st.rerun()
     except (ValueError, TypeError, KeyError, UnicodeError, json.JSONDecodeError) as exc:
@@ -165,7 +162,10 @@ with st.sidebar:
     chunk_count = len(st.session_state.engine.retriever.chunks)
     doc_count = len(st.session_state.corpus_payload.get('documents', [])) if isinstance(st.session_state.corpus_payload, dict) else 0
     st.success(f'Indexed successfully · {doc_count} evidence section(s) · {chunk_count} searchable chunk(s)')
-    st.caption(f'Active workspace: {active_name}')
+    if st.session_state.corpus_payload.get('synthetic'):
+        st.warning(f'ACTIVE: {active_name} (bundled sample)')
+    else:
+        st.success(f'ACTIVE: {active_name}')
     st.caption('Evidence stays in this browser session. The bundled sample is synthetic demo data.')
     st.page_link('pages/2_Live_News.py', label='Live audio / news RAG', icon='🎙️')
 
@@ -173,10 +173,6 @@ engine = st.session_state.engine
 active_name = st.session_state.corpus_payload.get('name', 'Bundled sample') if isinstance(st.session_state.corpus_payload, dict) else 'Evidence workspace'
 active_chunks = len(engine.retriever.chunks)
 is_sample = bool(st.session_state.corpus_payload.get('synthetic')) if isinstance(st.session_state.corpus_payload, dict) else False
-if is_sample:
-    st.info(f'📚 ACTIVE EVIDENCE · {active_name} · {active_chunks} searchable chunks · bundled sample')
-else:
-    st.success(f'✅ ACTIVE EVIDENCE · {active_name} · {active_chunks} searchable chunks')
 st.markdown('<div class="eyebrow">STREAM EARLY · RETRIEVE · REFINE · CITE</div>', unsafe_allow_html=True)
 st.title('Answers that evolve with you.')
 st.caption('Bring your own evidence, ask naturally, and watch retrieval begin before the transcript ends. The bundled workshop data is only an optional sample.')
