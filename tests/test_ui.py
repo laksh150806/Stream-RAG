@@ -26,5 +26,14 @@ class UITests(unittest.TestCase):
         self.assertEqual(app.session_state['engine'].snapshot()['claims'],[])
 
 
+    def test_core_grounded_generation_is_evidence_only(self):
+        root = Path(__file__).resolve().parents[1]
+        source = (root / 'app.py').read_text(encoding='utf-8')
+        self.assertIn('Retrieved evidence:', source)
+        self.assertIn("invalid = cited - allowed", source)
+        self.assertIn('the full corpus is never sent to generation', source)
+
+
+
 if __name__=='__main__':
     unittest.main()
