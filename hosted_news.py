@@ -68,6 +68,7 @@ BBC_STREAM_URLS = (
 
 
 DB_DIR = './streaming_rag'
+HOSTED_DB_FILE = os.path.join(DB_DIR, 'transcripts.json')
 COLLECTION_NAME = 'bbc_transcripts_stable_v2'
 
 
@@ -83,16 +84,28 @@ def _lightweight_embedding(text, dims=128):
     return [v / norm for v in vec]
 
 
-def get_chroma_collection():
-    # Chroma/ONNX are heavy; import only when the Live News database is actually used.
-    # This keeps normal app/page navigation lightweight on small hosted instances.
-    import chromadb
+def _load_hosted_docs():
+    """Tiny JSON transcript store for constrained hosted instances.
+
+    Live News already supplies its own deterministic embeddings/retrieval, so
+    loading the full Chroma/ONNX dependency just to persist a handful of demo
+    transcripts is unnecessary and can destabilize 512 MB services.
+    """
     os.makedirs(DB_DIR, exist_ok=True)
-    client = chromadb.PersistentClient(path=DB_DIR)
-    return client.get_or_create_collection(
-        name=COLLECTION_NAME,
-        metadata={'hnsw:space': 'cosine'}
-    )
+    try:
+        with open(HOSTED_DB_FILE, 'r', encoding='utf-8') as fh:
+            data = json.load(fh)
+        return data if isinstance(data, list) else []
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return []
+
+
+def _save_hosted_docs(docs):
+    os.makedirs(DB_DIR, exist_ok=True)
+    tmp = HOSTED_DB_FILE + '.tmp'
+    with open(tmp, 'w', encoding='utf-8') as fh:
+        json.dump(docs, fh, ensure_ascii=False)
+    os.replace(tmp, HOSTED_DB_FILE)
 
 
 def add_transcript_to_db(text, source='BBC World Service'):
@@ -101,104 +114,56 @@ def add_transcript_to_db(text, source='BBC World Service'):
 
     chunk_id = f'news-{uuid4().hex[:12]}'
     now = datetime.now(timezone.utc)
-    unix_time = time.time()
-    timestamp_str = now.strftime('%Y-%m-%d %H:%M:%S UTC')
-    words = len(text.split())
-
     metadata = {
         'source': source,
-        'unix_time': unix_time,
-        'timestamp': timestamp_str,
+        'unix_time': time.time(),
+        'timestamp': now.strftime('%Y-%m-%d %H:%M:%S UTC'),
         'chunk_id': chunk_id,
-        'word_count': words,
+        'word_count': len(text.split()),
     }
-
-    col = get_chroma_collection()
-    col.add(
-        documents=[text],
-        embeddings=[_lightweight_embedding(text)],
-        metadatas=[metadata],
-        ids=[chunk_id]
-    )
-
-    return {
+    doc = {
         'id': chunk_id,
         'title': f'{source} · {now.strftime("%H:%M:%S UTC")}',
         'text': text,
-        'metadata': metadata
+        'metadata': metadata,
     }
+    docs = _load_hosted_docs()
+    docs.append(doc)
+    _save_hosted_docs(docs[-1000:])
+    return doc
 
 
 def get_db_stats():
-    col = get_chroma_collection()
-    total_chunks = col.count()
-    total_words = 0
-    if total_chunks > 0:
-        res = col.get(include=['metadatas'])
-        for meta in res.get('metadatas', []) or []:
-            if meta:
-                total_words += meta.get('word_count', 0)
+    docs = _load_hosted_docs()
     return {
-        'total_chunks': total_chunks,
-        'total_words': total_words,
-        'db_path': DB_DIR
+        'total_chunks': len(docs),
+        'total_words': sum(int((d.get('metadata') or {}).get('word_count', 0)) for d in docs),
+        'db_path': HOSTED_DB_FILE,
     }
 
 
 def get_recent_chunks(limit=10):
-    col = get_chroma_collection()
-    if col.count() == 0:
-        return []
-    res = col.get(include=['documents', 'metadatas'])
-    docs = []
-    for doc_id, text, meta in zip(res['ids'], res['documents'], res['metadatas']):
-        docs.append({
-            'id': doc_id,
-            'title': f"{meta.get('source', 'Radio')} · {meta.get('timestamp', '')}",
-            'text': text,
-            'metadata': meta
-        })
-    docs.sort(key=lambda x: x['metadata'].get('unix_time', 0), reverse=True)
+    docs = _load_hosted_docs()
+    docs.sort(key=lambda x: (x.get('metadata') or {}).get('unix_time', 0), reverse=True)
     return docs[:limit]
 
 
 def search_and_rerank_db(question, minutes=None, rerank=True, limit=6):
-    col = get_chroma_collection()
-    total = col.count()
-    if total == 0:
-        return []
-
-    cutoff_time = 0.0
-    if minutes is not None:
-        cutoff_time = time.time() - (minutes * 60)
-
-    fetch_n = min(30, total)
-    res = col.query(
-        query_embeddings=[_lightweight_embedding(question)],
-        n_results=fetch_n,
-        include=['documents', 'metadatas', 'distances']
-    )
-
+    docs = _load_hosted_docs()
+    cutoff_time = time.time() - (minutes * 60) if minutes is not None else 0.0
     candidates = []
-    if res and res.get('ids') and res['ids'][0]:
-        ids = res['ids'][0]
-        texts = res['documents'][0]
-        metas = res['metadatas'][0]
-        dists = res['distances'][0] if 'distances' in res and res['distances'] else [0.5]*len(ids)
-
-        for doc_id, text, meta, dist in zip(ids, texts, metas, dists):
-            utime = meta.get('unix_time', 0)
-            if minutes is not None and utime < cutoff_time:
-                continue
-            candidates.append({
-                'id': doc_id,
-                'title': f"{meta.get('source', 'Radio')} · {meta.get('timestamp', '')}",
-                'text': text,
-                'metadata': meta,
-                'vector_distance': round(dist, 4),
-                'vector_score': round(1.0 / (1.0 + dist), 4)
-            })
-
+    qvec = _lightweight_embedding(question)
+    for doc in docs:
+        meta = doc.get('metadata') or {}
+        if minutes is not None and float(meta.get('unix_time', 0) or 0) < cutoff_time:
+            continue
+        dvec = _lightweight_embedding(doc.get('text', ''))
+        similarity = sum(a * b for a, b in zip(qvec, dvec))
+        candidates.append({
+            **doc,
+            'vector_distance': round(1.0 - similarity, 4),
+            'vector_score': round(similarity, 4),
+        })
     if not candidates:
         return []
 
