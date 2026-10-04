@@ -36,8 +36,11 @@ BBC_PLAYLIST_URLS = (
 )
 
 BBC_STREAM_URLS = (
-    # Prefer BBC's HLS World Service endpoints. The legacy MP3 relay is retained
-    # as a later fallback because some cloud regions cannot read it reliably.
+    # Restore the BBC World Service HLS pools that were used by the earlier
+    # hosted implementation before trying redirector/legacy relays.
+    'https://as-hls-ww-live.akamaized.net/pool_87948813/live/ww/bbc_world_service/bbc_world_service.isml/bbc_world_service-audio=96000.norewind.m3u8',
+    'http://as-hls-ww-live.akamaized.net/pool_87948813/live/ww/bbc_world_service/bbc_world_service.isml/bbc_world_service-audio=96000.norewind.m3u8',
+    'https://as-hls-ww-live.akamaized.net/pool_80670621/live/ww/bbc_world_service_south_asia/bbc_world_service_south_asia.isml/bbc_world_service_south_asia-audio=96000.norewind.m3u8',
     'https://a.files.bbci.co.uk/media/live/manifesto/audio/simulcast/hls/nonuk/sbr_low/ak/bbc_world_service.m3u8',
     'http://a.files.bbci.co.uk/media/live/manifesto/audio/simulcast/hls/nonuk/sbr_low/ak/bbc_world_service.m3u8',
     'http://as-hls-ww.live.cf.md.bbci.co.uk/pool_87948813/live/ww/bbc_world_service/bbc_world_service.isml/bbc_world_service-audio=320000.norewind.m3u8',
@@ -363,10 +366,13 @@ def _candidate_streams():
     if override:
         urls.append(override)
 
+    # Try the known BBC HLS candidates first. Playlist metadata currently
+    # resolves to legacy relays that can fail from Render before the working
+    # HLS fallbacks are reached.
+    urls.extend(BBC_STREAM_URLS)
+
     for playlist in BBC_PLAYLIST_URLS:
         urls.extend(_playlist_streams(playlist))
-
-    urls.extend(BBC_STREAM_URLS)
     seen = set()
     return [u for u in urls if u and not (u in seen or seen.add(u))]
 
