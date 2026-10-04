@@ -49,6 +49,8 @@ def fresh_session(payload=None):
     st.session_state.engine = StreamingSession(load_corpus(payload))
     st.session_state.turn_number = 0
     st.session_state.last_transcript = ''
+    st.session_state.grounded_answer = None
+    st.session_state.grounded_citations = []
 
 
 def uploaded_text(upload):
@@ -168,6 +170,13 @@ with st.sidebar:
     st.page_link('pages/2_Live_News.py', label='Live audio / news RAG', icon='🎙️')
 
 engine = st.session_state.engine
+active_name = st.session_state.corpus_payload.get('name', 'Bundled sample') if isinstance(st.session_state.corpus_payload, dict) else 'Evidence workspace'
+active_chunks = len(engine.retriever.chunks)
+is_sample = bool(st.session_state.corpus_payload.get('synthetic')) if isinstance(st.session_state.corpus_payload, dict) else False
+if is_sample:
+    st.info(f'📚 ACTIVE EVIDENCE · {active_name} · {active_chunks} searchable chunks · bundled sample')
+else:
+    st.success(f'✅ ACTIVE EVIDENCE · {active_name} · {active_chunks} searchable chunks')
 st.markdown('<div class="eyebrow">STREAM EARLY · RETRIEVE · REFINE · CITE</div>', unsafe_allow_html=True)
 st.title('Answers that evolve with you.')
 st.caption('Bring your own evidence, ask naturally, and watch retrieval begin before the transcript ends. The bundled workshop data is only an optional sample.')
@@ -322,6 +331,8 @@ with session_tab:
         run_replay = st.button('Run uploaded replay', disabled=replay_file is None)
     output = st.empty()
     if stream and message.strip():
+        st.session_state.grounded_answer = None
+        st.session_state.grounded_citations = []
         st.session_state.turn_number += 1
         start = max(0, engine.last_timestamp + .4)
         for event in simulate_stream(message, st.session_state.turn_number, start=start):
@@ -332,6 +343,8 @@ with session_tab:
                 draw_answer()
             time.sleep(.15)
     elif manual and fragment.strip():
+        st.session_state.grounded_answer = None
+        st.session_state.grounded_citations = []
         if engine.turn is None or engine.turn in engine._closed_turns:
             st.session_state.turn_number += 1
         engine.ingest(fragment, timestamp_s=max(0, engine.last_timestamp + .4), final=final_fragment, turn_id=str(st.session_state.turn_number))
@@ -366,11 +379,14 @@ with session_tab:
         try:
             with st.spinner('Generating strictly from retrieved evidence…'):
                 answer, cited = grounded_answer(engine.snapshot(), message or st.session_state.last_transcript)
-            st.markdown(answer)
-            if cited:
-                st.caption('Verified retrieved citations: ' + ', '.join(f'[{x}]' for x in cited))
+            st.session_state.grounded_answer = answer
+            st.session_state.grounded_citations = cited
         except Exception as exc:
             st.error(f'Grounded generation failed: {exc}')
+    if st.session_state.get('grounded_answer'):
+        st.markdown(st.session_state.grounded_answer)
+        if st.session_state.get('grounded_citations'):
+            st.caption('Verified retrieved citations: ' + ', '.join(f'[{x}]' for x in st.session_state.grounded_citations))
 
     timeline = decision_timeline()
     if timeline:
